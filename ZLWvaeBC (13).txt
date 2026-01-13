@@ -1588,6 +1588,11 @@ MainTab:AddToggle({
         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
         local hrp = char.HumanoidRootPart
         local hum = char:FindFirstChildOfClass("Humanoid")
+        
+        -- DEFINIÇÃO DAS VARIÁVEIS QUE ESTAVAM FALTANDO
+        local RunService = game:GetService("RunService")
+        local ALTURA_BASE = 50 -- Altura fixa para o tornado
+        local localSelecionado = Vector3.new(0, 0, 0) -- Centro do giro (ajuste conforme necessário)
 
         if tornadoAtivo then
             posicaoInicial = hrp.CFrame
@@ -1610,8 +1615,15 @@ MainTab:AddToggle({
                 bVelo.AngularVelocity = Vector3.new(0, 9999, 0)
 
                 local noclip = RunService.Stepped:Connect(function()
-                    if not tornadoAtivo then noclip:Disconnect() return end
-                    for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
+                    if not tornadoAtivo then 
+                        noclip:Disconnect() 
+                        return 
+                    end
+                    for _, v in pairs(char:GetDescendants()) do 
+                        if v:IsA("BasePart") then 
+                            v.CanCollide = false 
+                        end 
+                    end
                     if hum.SeatPart and hum.SeatPart.Parent then
                         for _, p in pairs(hum.SeatPart.Parent:GetDescendants()) do
                             if p:IsA("BasePart") then
@@ -1626,33 +1638,44 @@ MainTab:AddToggle({
                     tempo = tempo + 0.03
                     anguloGiro = anguloGiro + 2.5
 
-                    -- GIRA EM TODOS OS LOCAIS SELECIONADOS
-                    local raio = 110 + (math.sin(tempo) * 55)
+                    -- GIRA COMO UM TORNADO (CÍRCULO COMPLETO)
+                    local raio = 50 -- Raio fixo para o tornado
                     local offX = math.sin(tempo) * raio
                     local offZ = math.cos(tempo) * raio
 
-                    -- ALTURA VARIADA PARA COBRIR TODAS AS ÁREAS
-                    local altura = ALTURA_BASE + (math.sin(tempo * 0.5) * 30)
+                    -- ALTURA FIXA - SEM VOAR
+                    local altura = ALTURA_BASE
 
-                    -- ROTAÇÃO COMPLETA EM TODOS OS EIXOS
+                    -- ROTAÇÃO DE TORNADO (GIRO VERTICAL E HORIZONTAL)
                     local rot = CFrame.Angles(
-                        math.rad(math.sin(tempo * 0.7) * 45), 
-                        math.rad(anguloGiro * 70), 
-                        math.rad(math.cos(tempo * 0.9) * 45)
+                        math.rad(10), -- Leve inclinação para efeito de tornado
+                        math.rad(anguloGiro * 100), -- Giro rápido horizontal
+                        math.rad(5) -- Pequena inclinação lateral
                     )
 
                     hrp.CFrame = CFrame.new(localSelecionado.X + offX, altura, localSelecionado.Z + offZ) * rot
                     RunService.Heartbeat:Wait()
                 end
-                if bVelo then bVelo:Destroy() end
+                
+                if bVelo then 
+                    bVelo:Destroy() 
+                end
+                if noclip then 
+                    noclip:Disconnect() 
+                end
             end)
         else
-            if hum.SeatPart then hum.SeatPart.Parent:Destroy() end
+            if hum.SeatPart then 
+                hum.SeatPart.Parent:Destroy() 
+            end
             task.wait(0.2)
-            if posicaoInicial then hrp.CFrame = posicaoInicial end
+            if posicaoInicial then 
+                hrp.CFrame = posicaoInicial 
+            end
         end
     end
 })
+
 
 ProtTab:AddToggle({
     Name = "Anti-Sit",
@@ -4476,4 +4499,5 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
