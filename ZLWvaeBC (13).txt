@@ -1633,11 +1633,8 @@ MainTab:AddToggle({
                     
                     local altura = ALTURA_BASE
                     
-                    local rot = CFrame.Angles(
-                        math.rad(math.sin(tempo * 0.7) * 45), 
-                        math.rad(anguloGiro * 70), 
-                        math.rad(math.cos(tempo * 0.9) * 45)
-                    )
+                    -- BARCO RETO, SÓ GIRA HORIZONTALMENTE (EIXO Y)
+                    local rot = CFrame.Angles(0, math.rad(anguloGiro * 70), 0)
                     
                     hrp.CFrame = CFrame.new(localSelecionado.X + offX, altura, localSelecionado.Z + offZ) * rot
                     RunService.Heartbeat:Wait()
@@ -1652,7 +1649,6 @@ MainTab:AddToggle({
         end
     end
 })
-
 
 ProtTab:AddToggle({
     Name = "Anti-Sit",
@@ -4476,6 +4472,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
