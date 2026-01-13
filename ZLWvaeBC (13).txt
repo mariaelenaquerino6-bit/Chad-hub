@@ -1577,7 +1577,7 @@ MainTab:AddDropdown({
     Default = "Ao Ponto Inicial",
     Callback = function(Value) localSelecionado = tornados[Value] end
 })
- 
+
 MainTab:AddToggle({
     Name = "Executar Fling Local [BETA]",
     Default = false,
@@ -1626,16 +1626,19 @@ MainTab:AddToggle({
                     tempo = tempo + 0.03
                     anguloGiro = anguloGiro + 2.5
 
+                    -- GIRA EM TODOS OS LOCAIS SELECIONADOS
                     local raio = 110 + (math.sin(tempo) * 55)
                     local offX = math.sin(tempo) * raio
-                    local offZ = math.cos(tempo * 0.7) * raio
+                    local offZ = math.cos(tempo) * raio
 
-                    local altura = ALTURA_BASE
+                    -- ALTURA VARIADA PARA COBRIR TODAS AS ÁREAS
+                    local altura = ALTURA_BASE + (math.sin(tempo * 0.5) * 30)
 
+                    -- ROTAÇÃO COMPLETA EM TODOS OS EIXOS
                     local rot = CFrame.Angles(
-                        math.rad(math.random(-15, 15)), 
+                        math.rad(math.sin(tempo * 0.7) * 45), 
                         math.rad(anguloGiro * 70), 
-                        math.rad(math.random(-15, 15))
+                        math.rad(math.cos(tempo * 0.9) * 45)
                     )
 
                     hrp.CFrame = CFrame.new(localSelecionado.X + offX, altura, localSelecionado.Z + offZ) * rot
@@ -1650,7 +1653,6 @@ MainTab:AddToggle({
         end
     end
 })
-
 
 ProtTab:AddToggle({
     Name = "Anti-Sit",
@@ -4474,3 +4476,4 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
