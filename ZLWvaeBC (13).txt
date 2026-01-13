@@ -1589,11 +1589,11 @@ MainTab:AddToggle({
         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
         local hrp = char.HumanoidRootPart
         local hum = char:FindFirstChildOfClass("Humanoid")
-        local RunService = game:GetService("RunService")
 
         if tornadoAtivo then
             posicaoInicial = hrp.CFrame
             
+            -- TELEPORTE E SPAWN (SEUS ORIGINAIS)
             hrp.CFrame = CFrame.new(-1719.35706, -3.04514122, -80.0188293, -0.0314787477, 3.9272237e-08, 0.999504447, -9.06328435e-09, 1, -3.95771487e-08, -0.999504447, -1.03046318e-08, -0.0314787477)
             task.wait(0.5)
             game:GetService("ReplicatedStorage"):WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("PickingBoat", "PirateFree", "Boat")
@@ -1605,6 +1605,7 @@ MainTab:AddToggle({
             task.spawn(function()
                 local tempo = 0
                 local anguloGiro = 0
+                local puloAtual = 0
                 
                 local bVelo = Instance.new("BodyAngularVelocity", hrp)
                 bVelo.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
@@ -1617,7 +1618,7 @@ MainTab:AddToggle({
                         for _, p in pairs(hum.SeatPart.Parent:GetDescendants()) do
                             if p:IsA("BasePart") then
                                 p.CanCollide = true
-                                p.Velocity = Vector3.new(0, 1400, 0) + (hrp.CFrame.LookVector * 3200)
+                                p.Velocity = Vector3.new(0, 1200, 0) + (hrp.CFrame.LookVector * 2800)
                             end
                         end
                     end
@@ -1627,20 +1628,29 @@ MainTab:AddToggle({
                     tempo = tempo + 0.03
                     anguloGiro = anguloGiro + 2.5
                     
+                    -- LÃ“GICA DOS PULINHOS ALEATÃ“RIOS
+                    if math.random(1, 15) == 1 then
+                        puloAtual = math.random(5, 12) -- Altura do pulo
+                    end
+                    puloAtual = math.max(0, puloAtual - 0.5) -- Faz o barco descer suavemente apÃ³s o pulo
+                    
                     local raio = 110 + (math.sin(tempo) * 55)
                     local offX = math.sin(tempo) * raio
-                    local offZ = math.cos(tempo) * raio
+                    local offZ = math.cos(tempo * 0.7) * raio
                     
-                    local altura = ALTURA_BASE
+                    -- TREMOR FRENÃ‰TICO + PULO ATUAL
+                    local tremorY = ALTURA_BASE + (math.sin(tick() * 65) * 2.5) + puloAtual
                     
-                    -- BARCO RETO, SÓ GIRA HORIZONTALMENTE (EIXO Y)
-                    local rot = CFrame.Angles(0, math.rad(anguloGiro * 70), 0)
+                    local rot = CFrame.Angles(
+                        math.rad(math.random(-25, 25)), 
+                        math.rad(anguloGiro * 65), 
+                        math.rad(math.random(-25, 25))
+                    )
                     
-                    hrp.CFrame = CFrame.new(localSelecionado.X + offX, altura, localSelecionado.Z + offZ) * rot
+                    hrp.CFrame = CFrame.new(localSelecionado.X + offX, tremorY, localSelecionado.Z + offZ) * rot
                     RunService.Heartbeat:Wait()
                 end
                 if bVelo then bVelo:Destroy() end
-                if noclip then noclip:Disconnect() end
             end)
         else
             if hum.SeatPart then hum.SeatPart.Parent:Destroy() end
@@ -4472,6 +4482,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
