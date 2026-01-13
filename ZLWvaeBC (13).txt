@@ -2538,14 +2538,14 @@ VeloTab:AddButton({
             applyToSeat(car:FindFirstChild("Body") and car.Body:FindFirstChild("VehicleSeat"))
             
             -- Notificação com Avatar do Player
-            Window:Notify({
+            Library:Notify({
                 Title = "Velocidade Aplicada",
                 Content = "Velocidade: " .. carSpeed .. " | Turbo: " .. turboValue",
                 Image = "getPlayerAvatar()", -- Aqui puxa sua foto
                 Duration = 4
             })
         else
-            Window:Notify({
+            Library:Notify({
                 Title = "Erro",
                 Content = "Carro não encontrado no servidor!",
                 Image = "getPlayerAvatar()",
@@ -4521,6 +4521,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
