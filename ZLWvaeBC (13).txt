@@ -2540,15 +2540,13 @@ VeloTab:AddButton({
             -- Notificação com Avatar do Player
             Library:Notify({
                 Title = "Velocidade Aplicada",
-                Content = "Velocidade: " .. carSpeed .. " | Turbo: " .. turboValue",
-                Image = "getPlayerAvatar()", -- Aqui puxa sua foto
+                Content = "Velocidade E turbo Aplicado",
                 Duration = 4
             })
         else
             Library:Notify({
                 Title = "Erro",
                 Content = "Carro não encontrado no servidor!",
-                Image = "getPlayerAvatar()",
                 Duration = 4
             })
         end
@@ -4521,6 +4519,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
