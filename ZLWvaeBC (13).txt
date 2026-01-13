@@ -1564,11 +1564,13 @@ local tornados = {
 }
 
 local localSelecionado = tornados["Ao Ponto Inicial"]
-local ALTURA_BASE = 19
-local tornadoAtivo = false
-
 local nomes = {}
 for n, _ in pairs(tornados) do table.insert(nomes, n) end
+
+local ShipSystem = {
+    tornadoActive = false,
+    currentShip = nil
+}
 
 local function spawnPirateShip()
     local character = LocalPlayer.Character
@@ -1578,20 +1580,20 @@ local function spawnPirateShip()
     
     hrp.CFrame = CFrame.new(1754, -2, 58)
     task.wait(0.5)
-    ReplicatedStorage.RE:FindFirstChild("1Ca1r"):FireServer("PickingBoat", "PirateFree")
+    ReplicatedStorage:WaitForChild("RE"):FindFirstChild("1Ca1r"):FireServer("PickingBoat", "PirateFree")
     task.wait(1)
     return workspace.Vehicles:FindFirstChild(LocalPlayer.Name .. "Car")
 end
 
 local function startTornado()
-    local ship = spawnPirateShip()
-    if not ship then return end
+    ShipSystem.currentShip = spawnPirateShip()
+    if not ShipSystem.currentShip then return end
     
-    local seat = ship:FindFirstChild("Body")
+    local seat = ShipSystem.currentShip:FindFirstChild("Body")
     seat = seat and seat:FindFirstChild("VehicleSeat")
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChild("Humanoid")
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local character = LocalPlayer.Character
+    local hum = character and character:FindFirstChild("Humanoid")
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
     
     if not seat or not hum then return end
     
@@ -1600,71 +1602,49 @@ local function startTornado()
         hrp.CFrame = seat.CFrame * CFrame.new(0, 1, 0)
     until hum.SeatPart == seat
     
-    -- ÁUDIO REMOVIDO --
-
+    -- REMOVIDO playShipAudio
+    
     task.delay(4, function()
         if hum.SeatPart then hum.Sit = false end
         hrp.CFrame = CFrame.new(0, 0, 0)
     end)
     
-    tornadoAtivo = true
+    ShipSystem.tornadoActive = true
     
-    -- Loop do Flip para o Fling
     task.spawn(function()
-        while tornadoAtivo and ship and ship.Parent do
-            ReplicatedStorage.RE:FindFirstChild("1Player1sCa1r"):FireServer("Flip")
+        local re = ReplicatedStorage:WaitForChild("RE"):WaitForChild("1Player1sCa1r")
+        while ShipSystem.tornadoActive and ShipSystem.currentShip and ShipSystem.currentShip.Parent do
+            re:FireServer("Flip")
             task.wait(0.5)
         end
     end)
     
-    -- LÓGICA DE MOVIMENTO E ALTURA (EXATAMENTE COMO A SUA)
-    task.spawn(function()
-        local tempo = 0
-        local anguloGiro = 0
-        local puloAtual = 0
+    local rotationSpeed = math.rad(720)
+    local currentRotation = 0
+    
+    local connection
+    connection = RunService.Heartbeat:Connect(function(dt)
+        if not ShipSystem.tornadoActive or not ShipSystem.currentShip or not ShipSystem.currentShip.PrimaryPart then
+            connection:Disconnect()
+            return
+        end
         
-        local connection
-        connection = RunService.Heartbeat:Connect(function()
-            if not tornadoAtivo or not ship or not ship.PrimaryPart then
-                connection:Disconnect()
-                return
-            end
-            
-            tempo = tempo + 0.03
-            anguloGiro = anguloGiro + 2.5
-            
-            -- Lógica dos pulinhos aleatórios
-            if math.random(1, 15) == 1 then
-                puloAtual = math.random(5, 12)
-            end
-            puloAtual = math.max(0, puloAtual - 0.5)
-            
-            local raio = 110 + (math.sin(tempo) * 55)
-            local offX = math.sin(tempo) * raio
-            local offZ = math.cos(tempo * 0.7) * raio
-            
-            -- Tremor Frenético + Pulo
-            local tremorY = ALTURA_BASE + (math.sin(tick() * 65) * 2.5) + puloAtual
-            
-            local rot = CFrame.Angles(
-                math.rad(math.random(-25, 25)), 
-                math.rad(anguloGiro * 65), 
-                math.rad(math.random(-25, 25))
-            )
-            
-            ship:SetPrimaryPartCFrame(CFrame.new(localSelecionado.X + offX, tremorY, localSelecionado.Z + offZ) * rot)
-        end)
+        currentRotation = currentRotation + rotationSpeed * dt
+        
+        -- USANDO A LÓGICA DE ALTURA DO SEU SCRIPT ORIGINAL (0 NO VETOR)
+        local cframe = CFrame.new(localSelecionado) * CFrame.Angles(0, currentRotation, 0)
+        ShipSystem.currentShip:SetPrimaryPartCFrame(cframe)
     end)
 end
 
 local function stopTornado()
-    tornadoAtivo = false
+    ShipSystem.tornadoActive = false
     task.spawn(function()
-        ReplicatedStorage.RE:FindFirstChild("1Ca1r"):FireServer("DeleteAllVehicles")
+        ReplicatedStorage:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles")
     end)
 end
 
--- [[ INTERFACE ]]
+-- [[ COMPONENTES WAND UI ]]
 MainTab:AddDropdown({
     Name = "Escolher Local",
     Options = nomes,
@@ -4507,6 +4487,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
