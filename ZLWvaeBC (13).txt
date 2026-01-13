@@ -2477,36 +2477,80 @@ VeloTab:AddSlider({
 })
 
 
+-- [[ VARIÁVEIS ]]
+local carSpeed = 25
+local turboValue = "25"
+
+-- Buscar imagem do Avatar do Jogador
+local function getPlayerAvatar()
+    local userId = LocalPlayer.UserId
+    local thumbType = Enum.ThumbnailType.HeadShot
+    local thumbSize = Enum.ThumbnailSize.Size150x150
+    local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+    return content
+end
+
+TabCarros:AddSection("Velocidade e Turbo")
+
+-- TextBox para Velocidade
 VeloTab:AddTextBox({
-    Title = "Velocity",
-    Default = "100",
-    Placeholder = "100",
-    ClearText = false,
-    Callback = function(value)
-        local playerCar = WorkspaceService.Vehicles:FindFirstChild(LocalPlayer.Name .. "Car")
-        if playerCar then
-            for _, part in pairs(playerCar:GetDescendants()) do
-                if part:IsA("VehicleSeat") and part:FindFirstChild("TopSpeed") then
-                    part.TopSpeed.Value = tonumber(value) or 100
-                end
-            end
-        end
+    Name = "Definir Velocidade",
+    PlaceholderText = "Ex: 100",
+    Default = tostring(carSpeed),
+    Callback = function(Value)
+        carSpeed = tonumber(Value) or carSpeed
     end
 })
 
+-- TextBox para Turbo
 VeloTab:AddTextBox({
-    Title = "Turbo",
-    Default = "12",
-    Placeholder = "12",
-    ClearText = false,
-    Callback = function(value)
-        local playerCar = WorkspaceService.Vehicles:FindFirstChild(LocalPlayer.Name .. "Car")
-        if playerCar then
-            for _, part in pairs(playerCar:GetDescendants()) do
-                if part:IsA("VehicleSeat") and part:FindFirstChild("Turbo") then
-                    part.Turbo.Value = tonumber(value) or 12
+    Name = "Definir Turbo",
+    PlaceholderText = "Ex: 50",
+    Default = turboValue,
+    Callback = function(Value)
+        turboValue = tostring(Value)
+    end
+})
+
+-- Botão para Aplicar
+VeloTab:AddButton({
+    Name = "Mudar Velocidade e Turbo",
+    Callback = function()
+        local vehicles = workspace:FindFirstChild("Vehicles")
+        local car = vehicles and vehicles:FindFirstChild(LocalPlayer.Name .. "Car")
+        
+        local function applyToSeat(seat)
+            if seat then
+                local maxSpeed = seat:FindFirstChild("MaxSpeed") or seat:FindFirstChild("TopSpeed")
+                if maxSpeed and maxSpeed:IsA("NumberValue") then
+                    maxSpeed.Value = carSpeed
+                end
+
+                local turbo = seat:FindFirstChild("Turbo")
+                if turbo and turbo:IsA("StringValue") then
+                    turbo.Value = turboValue
                 end
             end
+        end
+
+        if car then
+            applyToSeat(car:FindFirstChild("Seats") and car.Seats:FindFirstChild("VehicleSeat"))
+            applyToSeat(car:FindFirstChild("Body") and car.Body:FindFirstChild("VehicleSeat"))
+            
+            -- Notificação com Avatar do Player
+            Library:Notify({
+                Title = "Velocidade Aplicada",
+                Content = "Velocidade: " .. carSpeed .. " | Turbo: " .. turboValue,
+                Image = getPlayerAvatar(), -- Aqui puxa sua foto
+                Duration = 4
+            })
+        else
+            Library:Notify({
+                Title = "Erro",
+                Content = "Carro não encontrado no servidor!",
+                Image = getPlayerAvatar(),
+                Duration = 4
+            })
         end
     end
 })
@@ -4487,6 +4531,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
