@@ -2490,7 +2490,7 @@ local function getPlayerAvatar()
     return content
 end
 
-TabCarros:AddSection("Velocidade e Turbo")
+VeloTab:AddSection("Velocidade e Turbo")
 
 -- TextBox para Velocidade
 VeloTab:AddTextBox({
@@ -2559,7 +2559,7 @@ VeloTab:AddButton({
 VeloTab:AddSection("Comandos de Servidor")
 
 VeloTab:AddButton({
-    Name = "Void All Cars (Limpar Mapa)",
+    Name = "Void All Cars",
     Callback = function()
         local LP = game.Players.LocalPlayer
         local originalPos = LP.Character.HumanoidRootPart.CFrame
@@ -2584,17 +2584,7 @@ VeloTab:AddButton({
     end
 })
 
-VeloTab:AddButton({
-    Name = "Bring All Players (Carona Forçada)",
-    Callback = function()
-        local RE = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
-        for _, v in pairs(game.Players:GetPlayers()) do
-            if v ~= game.Players.LocalPlayer then
-                RE:FindFirstChild("1Clie1ntToServ1er"):FireServer("PickUp", v)
-            end
-        end
-    end
-})
+
 
 -- // 🧠 LÓGICA CENTRAL DE MOVIMENTO (Mantenha este bloco no final do script)
 local angle = 0
@@ -4531,6 +4521,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
