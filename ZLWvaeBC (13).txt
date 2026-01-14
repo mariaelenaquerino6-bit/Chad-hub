@@ -1734,116 +1734,6 @@ ProtTab:AddToggle({
     end
 })
 
-local LocalPlayer = Players.LocalPlayer
-
-local BlockedAnimations = {
-    "93224413172183",
-    "101852027997337",
-    "123456789012345"
-}
-
-local MonitoredPlayers = {}
-local IsAntiActive = false
-
-ProtTab:AddToggle({
-    Name = "Anti Flashbang/Skyblox",
-    Default = true,
-    Callback = function(Value)
-        IsAntiActive = Value
-        
-        if Value then
-            print(" Anti-Flashbang activated")
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer then
-                    MonitorPlayer(player)
-                end
-            end
-            
-            Players.PlayerAdded:Connect(function(newPlayer)
-                task.wait(1)
-                if newPlayer ~= LocalPlayer then
-                    MonitorPlayer(newPlayer)
-                end
-            end)
-        else
-            print("anti Flashbang/skyblox Disabled")
-            for player, _ in pairs(MonitoredPlayers) do
-                local char = player.Character
-                if char and char:FindFirstChildOfClass("Humanoid") then
-                    -- Não restauramos a função original, só paramos de bloquear
-                end
-            end
-            MonitoredPlayers = {}
-        end
-    end
-})
-
-local function BlockAnimation(player, animationId)
-    if Library and Library.MakeNotification then
-        local success, thumbnail = pcall(function()
-            return Players:GetUserThumbnailAsync(
-                player.UserId, 
-                Enum.ThumbnailType.HeadShot, 
-                Enum.ThumbnailSize.Size100x100
-            )
-        end)
-        
-        Library:MakeNotification({
-            Title = "🚫 FLASHBANG/SKYBLOX BLOQUEADO",
-            Content = player.Name .. " tentou usar flashbang/skyblox!",
-            Icon = success and thumbnail or "rbxassetid://0",
-            Time = 5
-        })
-    end
-    print("🚫 Bloqueado: " .. player.Name .. " | Animação: " .. animationId)
-    return true
-end
-
-local function MonitorPlayer(player)
-    if player == LocalPlayer or MonitoredPlayers[player] then return end
-    
-    MonitoredPlayers[player] = true
-    local originalLoadFunction = nil
-    
-    local function SetupCharacter(char)
-        if not char or not IsAntiActive then return end
-        
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
-        
-        originalLoadFunction = humanoid.LoadAnimation
-        
-        humanoid.LoadAnimation = function(self, animation)
-            if not IsAntiActive then
-                return originalLoadFunction(self, animation)
-            end
-            
-            local animId = tostring(animation.AnimationId)
-            local cleanId = animId:gsub("rbxassetid://", "")
-            
-            for _, blockedId in ipairs(BlockedAnimations) do
-                if cleanId == blockedId or animId:find(blockedId) then
-                    BlockAnimation(player, cleanId)
-                    return {
-                        Play = function() end,
-                        Stop = function() end,
-                        AdjustSpeed = function() end,
-                        AdjustWeight = function() end,
-                        IsPlaying = false
-                    }
-                end
-            end
-            
-            return originalLoadFunction(self, animation)
-        end
-    end
-    
-    if player.Character then
-        SetupCharacter(player.Character)
-    end
-    
-    player.CharacterAdded:Connect(SetupCharacter)
-end
 
 
 ProtTab:AddToggle({
@@ -1909,6 +1799,78 @@ local function ApplyVehicleCollision(vehicle)
         end
     end
 end
+
+local antiLagAtivo = false
+local antiLagConnections = {}
+local LocalPlayer = game:GetService("Players").LocalPlayer
+
+-- Itens que serão monitorados
+local itensParaLimitar = {"Laptop", "FireX", "Bomb", "Stretcher"}
+
+local function MonitorContainer(container)
+    container.ChildAdded:Connect(function(child)
+        -- Se o Anti-Lag estiver ON e o item estiver na lista negra
+        if antiLagAtivo and table.find(itensParaLimitar, child.Name) then
+            local count = 0
+            for _, item in ipairs(container:GetChildren()) do
+                if item.Name == child.Name then
+                    count = count + 1
+                    -- Se passar de 10, remove o item
+                    if count > 10 then
+                        item.Parent = nil
+                    end
+                end
+            end
+        end
+    end)
+end
+
+local function SetupAntiLagForPlayer(player)
+    -- REGRA: Se o jogador for VOCÊ, o script não monitora nada (você fica sem limite)
+    if player == LocalPlayer then return end
+
+    local function processPlayer(p)
+        local backpack = p:FindFirstChild("Backpack")
+        if backpack then MonitorContainer(backpack) end
+        
+        if p.Character then MonitorContainer(p.Character) end
+        
+        p.CharacterAdded:Connect(function(char)
+            MonitorContainer(char)
+        end)
+    end
+    processPlayer(player)
+end
+
+-- Toggle Único para a UI
+ProtTab:AddToggle({
+    Name = "Anti-Lag Contra Laptops, FireX,Bomb,Stretcher",
+    Flag = "AntiLag_Others",
+    Default = false,
+    Callback = function(enabled)
+        antiLagAtivo = enabled
+        
+        if enabled then
+            -- Ativa o monitoramento para todos, exceto você
+            for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                SetupAntiLagForPlayer(player)
+            end
+            
+            -- Novos players que entrarem também serão limitados
+            antiLagConnections["Global"] = game:GetService("Players").PlayerAdded:Connect(function(player)
+                SetupAntiLagForPlayer(player)
+            end)
+            
+            vu1:Notify("Anti Lag", "Limite de 10 itens ativo para OUTROS jogadores.")
+        else
+            if antiLagConnections["Global"] then
+                antiLagConnections["Global"]:Disconnect()
+                antiLagConnections["Global"] = nil
+            end
+            vu1:Notify("Anti Lag", "Filtro de itens desativado.")
+        end
+    end
+})
 
 ProtTab:AddToggle({
     Name = "Anti Fling Carros, Motos, Barcos, Aviões e Helicópteros",
@@ -4519,6 +4481,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
