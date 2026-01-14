@@ -431,6 +431,46 @@ MainTab:AddToggle({
     end
 })
 
+MainTab:AddButton({
+    Name = "Bring Player",
+    Callback = function()
+        if _G.IsTrapping then return end
+        _G.IsTrapping = true
+
+        local playerChar = LPlayer.Character
+        local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
+        if not playerHRP then _G.IsTrapping = false return end
+
+        -- Pega o player selecionado (mesma lógica do kill individual)
+        local targetPlayer = Players:FindFirstChild(_G.SelectedPlayer)
+        if not targetPlayer then
+            _G.IsTrapping = false
+            return
+        end
+
+        local targetChar = targetPlayer.Character
+        local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+        local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+
+        if not targetHRP or not targetHum or targetHum.Health <= 0 then
+            _G.IsTrapping = false
+            return
+        end
+
+        -- Traz o player para a sua frente
+        pcall(function()
+            targetHRP.Anchored = true
+            targetHRP.CFrame = playerHRP.CFrame * CFrame.new(0, 0, -3)
+            task.wait(0.1)
+            targetHRP.Velocity = Vector3.zero
+            targetHRP.RotVelocity = Vector3.zero
+            targetHRP.Anchored = false
+        end)
+
+        _G.IsTrapping = false
+    end
+})
+
 MainTab:AddSection("Métodos")
 
 MainTab:AddDropdown({
@@ -4463,6 +4503,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
