@@ -432,41 +432,108 @@ MainTab:AddToggle({
 })
 
 MainTab:AddButton({
-    Name = "Bring Player",
+    Name = "Bring (Couch)",
     Callback = function()
         if _G.IsTrapping then return end
         _G.IsTrapping = true
 
         local playerChar = LPlayer.Character
         local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
-        if not playerHRP then _G.IsTrapping = false return end
+        local playerHum = playerChar and playerChar:FindFirstChildOfClass("Humanoid")
 
-        -- Pega o player selecionado (mesma lógica do kill individual)
-        local targetPlayer = Players:FindFirstChild(_G.SelectedPlayer)
-        if not targetPlayer then
+        if not playerHRP or not playerHum then
             _G.IsTrapping = false
             return
         end
 
-        local targetChar = targetPlayer.Character
-        local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
-        local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+        -- Player selecionado
+        local targetPlayer = Players:FindFirstChild(_G.SelectedPlayer)
+        if not targetPlayer or not targetPlayer.Character then
+            _G.IsTrapping = false
+            return
+        end
+
+        local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
 
         if not targetHRP or not targetHum or targetHum.Health <= 0 then
             _G.IsTrapping = false
             return
         end
 
-        -- Traz o player para a sua frente
+        -- Limpa ferramentas e pega o sofá (IGUAL AO KILL)
         pcall(function()
-            targetHRP.Anchored = true
-            targetHRP.CFrame = playerHRP.CFrame * CFrame.new(0, 0, -3)
-            task.wait(0.1)
-            targetHRP.Velocity = Vector3.zero
-            targetHRP.RotVelocity = Vector3.zero
-            targetHRP.Anchored = false
+            RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
+            task.wait(0.2)
+            RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
         end)
 
+        task.wait(0.3)
+        local couch = LPlayer.Backpack:FindFirstChild("Couch")
+        if couch then couch.Parent = playerChar end
+
+        task.wait(0.1)
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        task.wait(0.25)
+
+        -- Força física (MESMA BASE DO KILL, MAS CONTROLADA)
+        workspace.FallenPartsDestroyHeight = 0/0
+
+        local bodyVel = Instance.new("BodyVelocity")
+        bodyVel.Name = "BringForce"
+        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel.Velocity = Vector3.new(0, 0, 0)
+        bodyVel.Parent = playerHRP
+
+        playerHum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+        workspace.CurrentCamera.CameraSubject = targetHRP
+
+        local startTime = tick()
+        local rotation = 0
+
+        -- LOOP IGUAL AO KILL, MAS PUXANDO PRA VOCÊ
+        while _G.IsTrapping
+        and targetPlayer.Parent
+        and targetHum.Health > 0
+        and not targetHum.Sit
+        and tick() - startTime < 4 do
+
+            RunService.Heartbeat:Wait()
+            rotation += 40
+
+            -- VOCÊ VAI ATÉ O PLAYER (encaixa o sofá)
+            local targetPos = targetHRP.Position
+            playerHRP.CFrame =
+                CFrame.new(targetPos)
+                * CFrame.Angles(0, math.rad(rotation), 0)
+
+            playerHRP.Velocity = Vector3.new(800000, 800000, 800000)
+            playerHRP.RotVelocity = Vector3.new(800000, 800000, 800000)
+        end
+
+        -- FINAL: TRAZ ELE PRA VOCÊ
+        pcall(function()
+            targetHRP.CFrame = playerHRP.CFrame * CFrame.new(0, 0, -3)
+            targetHRP.Velocity = Vector3.zero
+            targetHRP.RotVelocity = Vector3.zero
+        end)
+
+        -- Limpeza
+        bodyVel:Destroy()
+        playerHum:UnequipTools()
+        pcall(function()
+            RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
+        end)
+
+        for _, part in pairs(playerChar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Velocity = Vector3.zero
+                part.RotVelocity = Vector3.zero
+            end
+        end
+
+        playerHum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+        workspace.CurrentCamera.CameraSubject = playerHum
         _G.IsTrapping = false
     end
 })
@@ -4503,6 +4570,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
