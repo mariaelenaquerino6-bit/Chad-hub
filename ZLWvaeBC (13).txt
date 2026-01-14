@@ -432,7 +432,7 @@ MainTab:AddToggle({
 })
 
 MainTab:AddButton({
-    Name = "Bring (Couch)",
+    Name = "Bring (Couch Legit)",
     Callback = function()
         if _G.IsTrapping then return end
         _G.IsTrapping = true
@@ -446,7 +446,7 @@ MainTab:AddButton({
             return
         end
 
-        -- Player selecionado
+        -- alvo selecionado (MESMA BASE DO KILL)
         local targetPlayer = Players:FindFirstChild(_G.SelectedPlayer)
         if not targetPlayer or not targetPlayer.Character then
             _G.IsTrapping = false
@@ -461,7 +461,9 @@ MainTab:AddButton({
             return
         end
 
-        -- Limpa ferramentas e pega o sofá (IGUAL AO KILL)
+        local myOriginalPos = playerHRP.CFrame
+
+        -- === PEGA O SOFÁ (IGUAL AO KILL) ===
         pcall(function()
             RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
             task.wait(0.2)
@@ -476,49 +478,63 @@ MainTab:AddButton({
         game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
         task.wait(0.25)
 
-        -- Força física (MESMA BASE DO KILL, MAS CONTROLADA)
+        -- física base (igual kill)
         workspace.FallenPartsDestroyHeight = 0/0
 
         local bodyVel = Instance.new("BodyVelocity")
-        bodyVel.Name = "BringForce"
         bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel.Velocity = Vector3.new(0, 0, 0)
+        bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
         bodyVel.Parent = playerHRP
 
         playerHum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-        workspace.CurrentCamera.CameraSubject = targetHRP
 
-        local startTime = tick()
         local rotation = 0
+        local startTime = tick()
 
-        -- LOOP IGUAL AO KILL, MAS PUXANDO PRA VOCÊ
+        -- === LOOP 1: IR ATÉ O PLAYER ATÉ ELE SENTAR ===
         while _G.IsTrapping
         and targetPlayer.Parent
         and targetHum.Health > 0
         and not targetHum.Sit
-        and tick() - startTime < 4 do
+        and tick() - startTime < 6 do
+
+            RunService.Heartbeat:Wait()
+            rotation += 50
+
+            local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
+            playerHRP.CFrame =
+                CFrame.new(targetPos)
+                * CFrame.Angles(math.rad(rotation), 0, 0)
+
+            playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
+            playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
+        end
+
+        -- SE NÃO SENTOU, ABORTA
+        if not targetHum.Sit then
+            bodyVel:Destroy()
+            _G.IsTrapping = false
+            return
+        end
+
+        -- === LOOP 2: LEVAR O PLAYER ATÉ SUA POSIÇÃO ===
+        local bringStart = tick()
+        while _G.IsTrapping
+        and targetHum.Sit
+        and tick() - bringStart < 4 do
 
             RunService.Heartbeat:Wait()
             rotation += 40
 
-            -- VOCÊ VAI ATÉ O PLAYER (encaixa o sofá)
-            local targetPos = targetHRP.Position
             playerHRP.CFrame =
-                CFrame.new(targetPos)
+                myOriginalPos
                 * CFrame.Angles(0, math.rad(rotation), 0)
 
-            playerHRP.Velocity = Vector3.new(800000, 800000, 800000)
-            playerHRP.RotVelocity = Vector3.new(800000, 800000, 800000)
+            playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
+            playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
         end
 
-        -- FINAL: TRAZ ELE PRA VOCÊ
-        pcall(function()
-            targetHRP.CFrame = playerHRP.CFrame * CFrame.new(0, 0, -3)
-            targetHRP.Velocity = Vector3.zero
-            targetHRP.RotVelocity = Vector3.zero
-        end)
-
-        -- Limpeza
+        -- === LIMPEZA (IGUAL AO KILL) ===
         bodyVel:Destroy()
         playerHum:UnequipTools()
         pcall(function()
@@ -4570,6 +4586,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
