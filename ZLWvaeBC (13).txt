@@ -546,265 +546,234 @@ MainTab:AddButton({
 
 MainTab:AddSection("Fling")
 
--- Dropdown atualizado com as duas opções
-MainTab:AddDropdown({
-    Name = "Selecionar Fling",
-    Options = {"Fling School Bus"},
-    Default = "Fling School Bus",
-    Callback = function(v) 
-        _G.SelectedFling = v 
-    end
-})
+-- Função para Fling School Bus
+local function FlingSchoolBus(targetPlayer)
+    local LocalPlayer = game.Players.LocalPlayer
+    local RS = game:GetService("ReplicatedStorage")
  
-MainTab:AddButton({
-    Name = "Executar Fling",
-    Callback = function()
-        local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
-        local LocalPlayer = game.Players.LocalPlayer
-        local RS = game:GetService("ReplicatedStorage")
+    if targetPlayer.Character and LocalPlayer.Character then
+        local playerChar = LocalPlayer.Character
+        local playerHumanoid = playerChar:FindFirstChildOfClass("Humanoid")
+        local playerHRP = playerChar:FindFirstChild("HumanoidRootPart")
  
-        if not targetPlayer then 
-            return 
-        end
+        if playerHumanoid and playerHRP then
+            local originalPosition = playerHRP.CFrame 
  
-        if _G.SelectedFling == "Fling School Bus" then
-            if targetPlayer.Character and LocalPlayer.Character then
-                local playerChar = LocalPlayer.Character
-                local playerHumanoid = playerChar:FindFirstChildOfClass("Humanoid")
-                local playerHRP = playerChar:FindFirstChild("HumanoidRootPart")
+            pcall(function()
+                playerHRP.Anchored = true
+                playerHRP.CFrame = CFrame.new(1181.83, 76.08, -1158.83)
+                task.wait(0.2)
+                playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+                playerHRP.Anchored = false
+                playerHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end)
  
-                if playerHumanoid and playerHRP then
-                    local originalPosition = playerHRP.CFrame 
+            task.wait(0.5)
  
+            pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
+            pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("PickingCar", "SchoolBus") end)
+ 
+            task.wait(1)
+ 
+            local vFolder = game.Workspace:FindFirstChild("Vehicles")
+            if vFolder then
+                local bus = vFolder:FindFirstChild(LocalPlayer.Name .. "Car")
+                if bus then
                     pcall(function()
                         playerHRP.Anchored = true
-                        playerHRP.CFrame = CFrame.new(1181.83, 76.08, -1158.83)
+                        playerHRP.CFrame = CFrame.new(1171.15, 79.45, -1166.2)
                         task.wait(0.2)
                         playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
                         playerHRP.Anchored = false
-                        playerHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                        playerHumanoid:ChangeState(Enum.HumanoidStateType.Seated)
                     end)
  
-                    task.wait(0.5)
+                    local startTime = tick()
+                    while true do
+                        task.wait()
+                        if tick() - startTime > 10 then break end
  
-                    pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
-                    pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("PickingCar", "SchoolBus") end)
- 
-                    task.wait(1)
- 
-                    local vFolder = game.Workspace:FindFirstChild("Vehicles")
-                    if vFolder then
-                        local bus = vFolder:FindFirstChild(LocalPlayer.Name .. "Car")
-                        if bus then
-                            pcall(function()
-                                playerHRP.Anchored = true
-                                playerHRP.CFrame = CFrame.new(1171.15, 79.45, -1166.2)
-                                task.wait(0.2)
-                                playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
-                                playerHRP.Anchored = false
-                                playerHumanoid:ChangeState(Enum.HumanoidStateType.Seated)
-                            end)
- 
-                            local startTime = tick()
-                            while true do
-                                task.wait()
-                                if tick() - startTime > 10 then break end
- 
-                                if playerHumanoid.Sit then
-                                    for _, part in ipairs(bus:GetDescendants()) do
-                                        if part:IsA("BasePart") then
-                                            part.CanCollide = false
-                                            pcall(function() part:SetNetworkOwner(nil) end)
-                                        end
-                                    end
- 
-                                    local running = true
-                                    local connection = game:GetService("RunService").Stepped:Connect(function()
-                                        if running then
-                                            for _, part in ipairs(playerChar:GetDescendants()) do 
-                                                if part:IsA("BasePart") then part.CanCollide = false end 
-                                            end
-                                        end
-                                    end)
- 
-                                    local flingStart = tick()
-                                    local flingConnection
-                                    flingConnection = game:GetService("RunService").Heartbeat:Connect(function()
-                                        if not running or not (targetPlayer and targetPlayer.Character) then 
-                                            running = false 
-                                            return 
-                                        end
- 
-                                        local tHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-                                        local tHum = targetPlayer.Character:FindFirstChild("Humanoid")
- 
-                                        if not (tHRP and tHum and playerHRP and playerHumanoid) then 
-                                            running = false 
-                                            return 
-                                        end
- 
-                                        pcall(function()
-                                            bus:PivotTo(CFrame.new(tHRP.Position + Vector3.new(math.random(-10,10),0,math.random(-10,10))) * CFrame.Angles(math.rad(game.Workspace.DistributedGameTime*12000),math.rad(game.Workspace.DistributedGameTime*15000),math.rad(game.Workspace.DistributedGameTime*18000)))
-                                        end)
- 
-                                        local targetSitting = false
-                                        for _, p in ipairs(bus:GetDescendants()) do
-                                            if (p:IsA("Seat") or p:IsA("VehicleSeat")) and p.Name ~= "VehicleSeat" and p.Occupant == tHum then 
-                                                targetSitting = true 
-                                                break 
-                                            end
-                                        end
- 
-                                        if targetSitting or tick() - flingStart > 10 then
-                                            running = false
-                                            flingConnection:Disconnect()
- 
-                                            pcall(function() bus:PivotTo(CFrame.new(-59599.73, 2040070.5, -293391.16)) end)
- 
-                                            local bv = Instance.new("BodyVelocity")
-                                            bv.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
-                                            bv.Velocity = Vector3.new(0,1000000,0)
-                                            bv.Parent = playerHRP
- 
-                                            task.wait(0.5)
-                                            pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
-                                            if bv then bv:Destroy() end
- 
-                                            for _, p in ipairs(playerChar:GetDescendants()) do 
-                                                if p:IsA("BasePart") then p.CanCollide = true end 
-                                            end
- 
-                                            pcall(function()
-                                                playerHRP.Anchored = true
-                                                playerHRP.CFrame = originalPosition
-                                                task.wait(0.2)
-                                                playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
-                                                playerHRP.Anchored = false
-                                                playerHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-                                            end)
-                                            connection:Disconnect()
-                                        end
-                                    end)
-                                    return
+                        if playerHumanoid.Sit then
+                            for _, part in ipairs(bus:GetDescendants()) do
+                                if part:IsA("BasePart") then
+                                    part.CanCollide = false
+                                    pcall(function() part:SetNetworkOwner(nil) end)
                                 end
                             end
+ 
+                            local running = true
+                            local connection = game:GetService("RunService").Stepped:Connect(function()
+                                if running then
+                                    for _, part in ipairs(playerChar:GetDescendants()) do 
+                                        if part:IsA("BasePart") then part.CanCollide = false end 
+                                    end
+                                end
+                            end)
+ 
+                            local flingStart = tick()
+                            local flingConnection
+                            flingConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                                if not running or not (targetPlayer and targetPlayer.Character) then 
+                                    running = false 
+                                    return 
+                                end
+ 
+                                local tHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                                local tHum = targetPlayer.Character:FindFirstChild("Humanoid")
+ 
+                                if not (tHRP and tHum and playerHRP and playerHumanoid) then 
+                                    running = false 
+                                    return 
+                                end
+ 
+                                pcall(function()
+                                    bus:PivotTo(CFrame.new(tHRP.Position + Vector3.new(math.random(-10,10),0,math.random(-10,10))) * CFrame.Angles(math.rad(game.Workspace.DistributedGameTime*12000),math.rad(game.Workspace.DistributedGameTime*15000),math.rad(game.Workspace.DistributedGameTime*18000)))
+                                end)
+ 
+                                local targetSitting = false
+                                for _, p in ipairs(bus:GetDescendants()) do
+                                    if (p:IsA("Seat") or p:IsA("VehicleSeat")) and p.Name ~= "VehicleSeat" and p.Occupant == tHum then 
+                                        targetSitting = true 
+                                        break 
+                                    end
+                                end
+ 
+                                if targetSitting or tick() - flingStart > 10 then
+                                    running = false
+                                    flingConnection:Disconnect()
+ 
+                                    pcall(function() bus:PivotTo(CFrame.new(-59599.73, 2040070.5, -293391.16)) end)
+ 
+                                    local bv = Instance.new("BodyVelocity")
+                                    bv.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+                                    bv.Velocity = Vector3.new(0,1000000,0)
+                                    bv.Parent = playerHRP
+ 
+                                    task.wait(0.5)
+                                    pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
+                                    if bv then bv:Destroy() end
+ 
+                                    for _, p in ipairs(playerChar:GetDescendants()) do 
+                                        if p:IsA("BasePart") then p.CanCollide = true end 
+                                    end
+ 
+                                    pcall(function()
+                                        playerHRP.Anchored = true
+                                        playerHRP.CFrame = originalPosition
+                                        task.wait(0.2)
+                                        playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+                                        playerHRP.Anchored = false
+                                        playerHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                                    end)
+                                    connection:Disconnect()
+                                end
+                            end)
+                            return
                         end
                     end
                 end
             end
         end
     end
-})
+end
 
-MainTab:AddSection("Flings OP")
-
-MainTab:AddButton({
-    Name =  "Fling - Boat",
-    Callback = function()
-        if not _G.SelectedPlayer or not game.Players:FindFirstChild(_G.SelectedPlayer) then
-            warn("Nenhum jogador selecionado ou não existe")
-            return
-        end
-
-        local Player = game.Players.LocalPlayer
-        local Character = Player.Character
-        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-        local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-        local Vehicles = game.Workspace:FindFirstChild("Vehicles")
-
-        if not Humanoid or not RootPart then
-            warn("Humanoid ou RootPart inválido")
-            return
-        end
-
-        local function spawnBoat()
-            RootPart.CFrame = CFrame.new(1754, -2, 58)
-            task.wait(0.5)
-            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Ca1r"):FireServer("PickingBoat", "MilitaryBoatFree")
-            task.wait(1)
-            return Vehicles:FindFirstChild(Player.Name.."Car")
-        end
-
-        local PCar = Vehicles:FindFirstChild(Player.Name.."Car") or spawnBoat()
-        if not PCar then
-            warn("Falha ao spawnar o barco")
-            return
-        end
-
-        local Seat = PCar:FindFirstChild("Body") and PCar.Body:FindFirstChild("VehicleSeat")
-        if not Seat then
-            warn("Assento não encontrado")
-            return
-        end
-
-        repeat 
-            task.wait(0.1)
-            RootPart.CFrame = Seat.CFrame * CFrame.new(0, 1, 0)
-        until Humanoid.SeatPart == Seat
-
-        print("Barco spawnado!")
-
-        local TargetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
-        if not TargetPlayer or not TargetPlayer.Character then
-            warn("Jogador não encontrado")
-            return
-        end
-
-        local TargetC = TargetPlayer.Character
-        local TargetH = TargetC:FindFirstChildOfClass("Humanoid")
-        local TargetRP = TargetC:FindFirstChild("HumanoidRootPart")
-
-        if not TargetRP or not TargetH then
-            warn("Humanoid ou RootPart do alvo não encontrado")
-            return
-        end
-
-        local Spin = Instance.new("BodyAngularVelocity")
-        Spin.Name = "Spinning"
-        Spin.Parent = PCar.PrimaryPart
-        Spin.MaxTorque = Vector3.new(0, math.huge, 0)
-        Spin.AngularVelocity = Vector3.new(0, 369, 0) 
-
-        print("Fling ativo!")
-
-        local function moveCar(TargetRP, offset)
-            if PCar and PCar.PrimaryPart then
-                PCar:SetPrimaryPartCFrame(CFrame.new(TargetRP.Position + offset))
-            end
-        end
-
-        task.spawn(function()
-            while PCar and PCar.Parent and TargetRP and TargetRP.Parent do
-                task.wait(0.01) 
-                
-                moveCar(TargetRP, Vector3.new(0, 1, 0))  
-                moveCar(TargetRP, Vector3.new(0, -2.25, 5))  
-                moveCar(TargetRP, Vector3.new(0, 2.25, 0.25))  
-                moveCar(TargetRP, Vector3.new(-2.25, -1.5, 2.25))  
-                moveCar(TargetRP, Vector3.new(0, 1.5, 0))  
-                moveCar(TargetRP, Vector3.new(0, -1.5, 0))  
-
-                if PCar and PCar.PrimaryPart then
-                    local Rotation = CFrame.Angles(
-                        math.rad(math.random(-369, 369)),  
-                        math.rad(math.random(-369, 369)), 
-                        math.rad(math.random(-369, 369))
-                    )
-                    PCar:SetPrimaryPartCFrame(CFrame.new(TargetRP.Position + Vector3.new(0, 1.5, 0)) * Rotation)
-                end
-            end
-
-            if Spin and Spin.Parent then
-                Spin:Destroy()
-                print("Fling desativado")
-            end
-        end)
+-- Função para Fling - Boat (extraída do botão "Fling - Boat")
+local function FlingBoat(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then
+        warn("Jogador alvo inválido")
+        return
     end
-})
 
-print("Fling - Boat button created")
+    local Player = game.Players.LocalPlayer
+    local Character = Player.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local RootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+    local Vehicles = game.Workspace:FindFirstChild("Vehicles")
 
--- Função Fling Ball MELHORADA (Física e Velocidade de Giro)
+    if not Humanoid or not RootPart then
+        warn("Humanoid ou RootPart inválido")
+        return
+    end
+
+    local function spawnBoat()
+        RootPart.CFrame = CFrame.new(1754, -2, 58)
+        task.wait(0.5)
+        game:GetService("ReplicatedStorage").RE:FindFirstChild("1Ca1r"):FireServer("PickingBoat", "MilitaryBoatFree")
+        task.wait(1)
+        return Vehicles:FindFirstChild(Player.Name.."Car")
+    end
+
+    local PCar = Vehicles:FindFirstChild(Player.Name.."Car") or spawnBoat()
+    if not PCar then
+        warn("Falha ao spawnar o barco")
+        return
+    end
+
+    local Seat = PCar:FindFirstChild("Body") and PCar.Body:FindFirstChild("VehicleSeat")
+    if not Seat then
+        warn("Assento não encontrado")
+        return
+    end
+
+    repeat 
+        task.wait(0.1)
+        RootPart.CFrame = Seat.CFrame * CFrame.new(0, 1, 0)
+    until Humanoid.SeatPart == Seat
+
+    print("Barco spawnado!")
+
+    local TargetC = targetPlayer.Character
+    local TargetH = TargetC:FindFirstChildOfClass("Humanoid")
+    local TargetRP = TargetC:FindFirstChild("HumanoidRootPart")
+
+    if not TargetRP or not TargetH then
+        warn("Humanoid ou RootPart do alvo não encontrado")
+        return
+    end
+
+    local Spin = Instance.new("BodyAngularVelocity")
+    Spin.Name = "Spinning"
+    Spin.Parent = PCar.PrimaryPart
+    Spin.MaxTorque = Vector3.new(0, math.huge, 0)
+    Spin.AngularVelocity = Vector3.new(0, 369, 0) 
+
+    print("Fling ativo!")
+
+    local function moveCar(TargetRP, offset)
+        if PCar and PCar.PrimaryPart then
+            PCar:SetPrimaryPartCFrame(CFrame.new(TargetRP.Position + offset))
+        end
+    end
+
+    task.spawn(function()
+        while PCar and PCar.Parent and TargetRP and TargetRP.Parent do
+            task.wait(0.01) 
+            
+            moveCar(TargetRP, Vector3.new(0, 1, 0))  
+            moveCar(TargetRP, Vector3.new(0, -2.25, 5))  
+            moveCar(TargetRP, Vector3.new(0, 2.25, 0.25))  
+            moveCar(TargetRP, Vector3.new(-2.25, -1.5, 2.25))  
+            moveCar(TargetRP, Vector3.new(0, 1.5, 0))  
+            moveCar(TargetRP, Vector3.new(0, -1.5, 0))  
+
+            if PCar and PCar.PrimaryPart then
+                local Rotation = CFrame.Angles(
+                    math.rad(math.random(-369, 369)),  
+                    math.rad(math.random(-369, 369)), 
+                    math.rad(math.random(-369, 369))
+                )
+                PCar:SetPrimaryPartCFrame(CFrame.new(TargetRP.Position + Vector3.new(0, 1.5, 0)) * Rotation)
+            end
+        end
+
+        if Spin and Spin.Parent then
+            Spin:Destroy()
+            print("Fling desativado")
+        end
+    end)
+end
+
+-- Função Fling Ball (já existe no script)
 local function FlingBall(target)
     local players = game:GetService("Players")
     local player = players.LocalPlayer
@@ -900,23 +869,36 @@ local function FlingBall(target)
         end
     end
 end
- 
 
--- Adicionando na MainTab usando a variável global de seleção
+-- Dropdown atualizado com as três opções
+MainTab:AddDropdown({
+    Name = "Selecionar Fling",
+    Options = {"Fling School Bus", "Fling - Boat", "Fling Ball"},
+    Default = "Fling School Bus",
+    Callback = function(v) 
+        _G.SelectedFling = v 
+    end
+})
+ 
 MainTab:AddButton({
-    Name = "Fling Ball",
+    Name = "Executar Fling",
     Callback = function()
-        local targetName = _G.SelectedPlayer
-        local target = game:GetService("Players"):FindFirstChild(targetName)
-        
-        if target then
-            print("Iniciando Fling Ball em: " .. targetName)
-            FlingBall(target)
-        else
-            warn("Nenhum jogador selecionado ou jogador saiu.")
+        local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
+        if not targetPlayer then 
+            Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
+            return 
+        end
+
+        if _G.SelectedFling == "Fling School Bus" then
+            FlingSchoolBus(targetPlayer)
+        elseif _G.SelectedFling == "Fling - Boat" then
+            FlingBoat(targetPlayer)
+        elseif _G.SelectedFling == "Fling Ball" then
+            FlingBall(targetPlayer)
         end
     end
 })
+    
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -4481,6 +4463,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
