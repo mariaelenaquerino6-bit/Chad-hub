@@ -431,131 +431,6 @@ MainTab:AddToggle({
     end
 })
 
-MainTab:AddButton({
-    Name = "Bring Player (Sofá)",
-    Callback = function()
-        -- Verifica se há um jogador selecionado na variável global _G.SelectedPlayer
-        if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
-            Window:Notify({
-                Title = "Erro",
-                Content = "Nenhum jogador selecionado no Dropdown!",
-                Duration = 3
-            })
-            return
-        end
-
-        local target = Players:FindFirstChild(_G.SelectedPlayer)
-        if not target or not target.Character then
-            Window:Notify({Title = "Erro", Content = "Jogador não encontrado ou Offline!", Duration = 3})
-            return
-        end
-
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        local root = char:FindFirstChild("HumanoidRootPart")
-        local tRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
-        
-        if not hum or not root or not tRoot then return end
-
-        -- Início do Processo: Salva a posição de onde você está agora
-        local originalPos = root.Position 
-        
-        -- Limpa ferramentas e pega o sofá via RemoteEvent/Invoke
-        ReplicatedStorage:WaitForChild("RE"):WaitForChild("1Clea1rTool1s"):FireServer("ClearAllTools")
-        task.wait(0.2)
-
-        ReplicatedStorage.RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "Couch")
-        task.wait(0.3)
-
-        local tool = LocalPlayer.Backpack:FindFirstChild("Couch")
-        if tool then
-            tool.Parent = char
-        else
-            Window:Notify({Title = "Erro", Content = "Falha ao pegar o Sofá!", Duration = 2})
-            return
-        end
-        task.wait(0.1)
-
-        -- Simula a tecla F para ativar o sofá
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        task.wait(0.1)
-
-        -- Configurações para o Fling/Bring funcionar
-        hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-        hum.PlatformStand = false
-        
-        -- Foca a câmera no alvo para você ver o bring acontecendo
-        local cam = workspace.CurrentCamera
-        cam.CameraSubject = target.Character:FindFirstChild("Head") or tRoot or hum
-
-        -- BodyPosition para "colar" o player no seu sofá
-        local align = Instance.new("BodyPosition")
-        align.Name = "BringPosition"
-        align.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        align.D = 10
-        align.P = 30000
-        align.Position = root.Position
-        align.Parent = tRoot
-
-        task.spawn(function()
-            local angle = 0
-            local startTime = tick()
-            
-            -- Loop de captura e transporte de volta
-            while tick() - startTime < 5 and target and target.Character and target.Character.Parent do
-                local tHum = target.Character:FindFirstChildOfClass("Humanoid")
-                if not tHum or tHum.Sit then break end
-
-                local hrp = target.Character.HumanoidRootPart
-                local adjustedPos = hrp.Position + (hrp.Velocity / 1.5)
-
-                angle = angle + 50
-                -- Sua movimentação rotacional (Fling Force)
-                root.CFrame = CFrame.new(adjustedPos + Vector3.new(0, 2, 0)) * CFrame.Angles(math.rad(angle), 0, 0)
-                
-                -- Puxa o alvo para a sua nova posição a cada frame
-                align.Position = root.Position + Vector3.new(2, 0, 0)
-
-                task.wait()
-            end
-
-            -- Finalização: Limpa a física
-            align:Destroy()
-            hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-            hum.PlatformStand = false
-            cam.CameraSubject = hum
-
-            -- Zera velocidades para não morrer no retorno
-            for _, p in pairs(char:GetDescendants()) do
-                if p:IsA("BasePart") then
-                    p.Velocity = Vector3.zero
-                    p.RotVelocity = Vector3.zero
-                end
-            end
-
-            -- Teleporte de volta para a posição original com o player junto
-            task.wait(0.1)
-            root.Anchored = true
-            root.CFrame = CFrame.new(originalPos)
-            task.wait(0.001)
-            root.Anchored = false
-
-            -- Devolve o sofá para a mochila
-            task.wait(0.7)
-            local couchInChar = char:FindFirstChild("Couch")
-            if couchInChar then
-                couchInChar.Parent = LocalPlayer.Backpack
-            end
-
-            task.wait(0.001)
-            ReplicatedStorage.RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "Couch")
-            
-            Window:Notify({Title = "Bring", Content = "Jogador trazido com sucesso!", Duration = 2})
-        end)
-    end
-})
 
 MainTab:AddSection("Métodos")
 
@@ -4589,6 +4464,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
