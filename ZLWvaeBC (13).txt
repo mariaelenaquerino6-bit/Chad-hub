@@ -1949,7 +1949,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local Target = nil
- 
+
 -- Função para obter os nomes dos jogadores
 local function GetPlayerNames()
     local PlayerNames = {}
@@ -1958,25 +1958,50 @@ local function GetPlayerNames()
     end
     return PlayerNames
 end
- 
+
 -- Dropdown de seleção de jogador
 local Dropdown = AvatarTab:AddDropdown({
     Name = "Selecionar Jogador",
     Options = GetPlayerNames(),
-    Default = Target,
+    Default = nil,
     Callback = function(Value)
         Target = Value
+        print("Jogador selecionado:", Target)
     end
 })
- 
+
 -- Atualiza opções do dropdown quando alguém entra ou sai
 local function UpdateDropdown()
-    -- Corrigido de :Refresh para :SetOptions que é o padrão da Redz
-    Dropdown:SetOptions(GetPlayerNames())
+    local newPlayerNames = GetPlayerNames()
+    Dropdown:SetOptions(newPlayerNames)
+    
+    -- Resetar seleção se o jogador saiu do jogo
+    if Target then
+        local playerStillInGame = false
+        for _, name in ipairs(newPlayerNames) do
+            if name == Target then
+                playerStillInGame = true
+                break
+            end
+        end
+        
+        if not playerStillInGame then
+            Target = nil
+        end
+    end
 end
- 
-Players.PlayerAdded:Connect(UpdateDropdown)
-Players.PlayerRemoving:Connect(UpdateDropdown)
+
+Players.PlayerAdded:Connect(function(player)
+    print("Jogador entrou:", player.Name)
+    UpdateDropdown()
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    print("Jogador saindo:", player.Name)
+    UpdateDropdown()
+end)
+
+UpdateDropdown()
 
 AvatarTab:AddButton({
     Name = "Copiar Avatar",
@@ -4533,6 +4558,45 @@ game:GetService("RunService").RenderStepped:Connect(function(dt)
 end)
 
 
+-- [[ TOGGLE PARA ATIVAR/DESATIVAR ]]
+DiscordTab:AddToggle({
+  Name = "Notificar Entradas/Saídas",
+  Description = "Ativa avisos visuais no canto da tela",
+  Default = false,
+  Callback = function(Value)
+    NotificarAtivo = Value
+    
+    Window:Notify({
+      Title = "Sistema de Notificação",
+      Content = Value and "Ativado com sucesso!" or "Desativado com sucesso!",
+      Duration = 3
+    })
+  end
+})
+
+-- [[ LÓGICA DE DETEÇÃO - ENTRADA ]]
+Players.PlayerAdded:Connect(function(Player)
+  if NotificarAtivo then
+    Window:Notify({
+      Title = "☃️Novo Jogador",
+      Content = Player.DisplayName .. " (@" .. Player.Name .. ") entrou no servidor!",
+      Duration = 7
+    })
+  end
+end)
+
+-- [[ LÓGICA DE DETEÇÃO - SAÍDA ]]
+Players.PlayerRemoving:Connect(function(Player)
+  if NotificarAtivo then
+    Window:Notify({
+      Title = "🚪 Jogador Saiu",
+      Content = Player.DisplayName .. " saiu do servidor.",
+      Duration = 7
+    })
+  end
+end)
+
+
 DiscordTab:AddDiscordInvite({
 	Title = "redz black Comunity",
 	Description = "Red Black hub",
@@ -4562,6 +4626,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
