@@ -1945,31 +1945,48 @@ TeleportTab:AddDropdown({
 -- [[ Configuração da Aba Avatar ]]
 AvatarTab:AddSection("Copiar avatar dos jogadores")
 
-local PlayerDropdown = AvatarTab:AddDropdown({
-    Name = "Selecionar Jogador",
-    Options = {},
-    Callback = function(v) _G.AvatarPlayer = v end
-})
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
-task.spawn(function()
-    while true do
-        local names = {}
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LPlayer then table.insert(names, v.Name) end
-        end
-        PlayerDropdown:NewOptions(names)
-        task.wait(5)
+local Target = nil
+ 
+-- FunÃ§Ã£o para obter os nomes dos jogadores
+local function GetPlayerNames()
+    local PlayerNames = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        table.insert(PlayerNames, player.Name)
     end
-end)
+    return PlayerNames
+end
+ 
+-- Dropdown de seleÃ§Ã£o de jogador
+local Dropdown = AvatarTab:AddDropdown({
+    Name = "Selecionar Jogador",
+    Options = GetPlayerNames(),
+    Default = Target,
+    Callback = function(Value)
+        Target = Value
+    end
+})
+ 
+-- Atualiza opÃ§Ãµes do dropdown quando alguÃ©m entra ou sai
+local function UpdateDropdown()
+    -- Corrigido de :Refresh para :SetOptions que Ã© o padrÃ£o da Redz
+    Dropdown:SetOptions(GetPlayerNames())
+end
+ 
+Players.PlayerAdded:Connect(UpdateDropdown)
+Players.PlayerRemoving:Connect(UpdateDropdown)
 
 AvatarTab:AddButton({
     Name = "Copiar Avatar",
     Callback = function()
-        if not _G.AvatarPlayer then return end
+        if not Target then return end
 
         local LP = Players.LocalPlayer
         local LChar = LP.Character
-        local TPlayer = Players:FindFirstChild(_G.AvatarPlayer)
+        local TPlayer = Players:FindFirstChild(Target)
 
         if TPlayer and TPlayer.Character then
             local LHumanoid = LChar and LChar:FindFirstChildOfClass("Humanoid")
@@ -4585,6 +4602,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
