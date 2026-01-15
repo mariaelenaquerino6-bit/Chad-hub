@@ -432,125 +432,90 @@ MainTab:AddToggle({
 })
 
 MainTab:AddButton({
-    Name = "Bring (Couch Legit)",
+    Name = "Bring Player (Couch)",
     Callback = function()
         if _G.IsTrapping then return end
+        
+        -- Verifica se há um jogador selecionado na variável global do seu script
+        if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
+            Window:Notify({Title = "Erro", Content = "Selecione um jogador primeiro!", Duration = 3})
+            return 
+        end
+
+        local targetPlayer = game:GetService("Players"):FindFirstChild(_G.SelectedPlayer)
+        if not targetPlayer or not targetPlayer.Character then return end
+
         _G.IsTrapping = true
 
-        local playerChar = LPlayer.Character
-        local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
-        local playerHum = playerChar and playerChar:FindFirstChildOfClass("Humanoid")
-
-        if not playerHRP or not playerHum then
-            _G.IsTrapping = false
-            return
-        end
-
-        -- alvo selecionado (MESMA BASE DO KILL)
-        local targetPlayer = Players:FindFirstChild(_G.SelectedPlayer)
-        if not targetPlayer or not targetPlayer.Character then
-            _G.IsTrapping = false
-            return
-        end
+        local playerChar = LPlayer.Character  
+        local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")  
+        local playerHumanoid = playerChar and playerChar:FindFirstChildOfClass("Humanoid")  
+        
+        if not playerHRP or not playerHumanoid then _G.IsTrapping = false return end  
+        
+        local originalPos = playerHRP.CFrame -- Posição para onde o player será trazido
 
         local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
         local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
 
-        if not targetHRP or not targetHum or targetHum.Health <= 0 then
-            _G.IsTrapping = false
-            return
-        end
-
-        local myOriginalPos = playerHRP.CFrame
-
-        -- === PEGA O SOFÁ (IGUAL AO KILL) ===
-        pcall(function()
-            RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
-            task.wait(0.2)
-            RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
-        end)
-
-        task.wait(0.3)
-        local couch = LPlayer.Backpack:FindFirstChild("Couch")
-        if couch then couch.Parent = playerChar end
-
-        task.wait(0.1)
-        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        task.wait(0.25)
-
-        -- física base (igual kill)
-        workspace.FallenPartsDestroyHeight = 0/0
-
-        local bodyVel = Instance.new("BodyVelocity")
-        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
-        bodyVel.Parent = playerHRP
-
-        playerHum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-
-        local rotation = 0
-        local startTime = tick()
-
-        -- === LOOP 1: IR ATÉ O PLAYER ATÉ ELE SENTAR ===
-        while _G.IsTrapping
-        and targetPlayer.Parent
-        and targetHum.Health > 0
-        and not targetHum.Sit
-        and tick() - startTime < 6 do
-
-            RunService.Heartbeat:Wait()
-            rotation += 50
-
-            local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
-            playerHRP.CFrame =
-                CFrame.new(targetPos)
-                * CFrame.Angles(math.rad(rotation), 0, 0)
-
-            playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
-            playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
-        end
-
-        -- SE NÃO SENTOU, ABORTA
-        if not targetHum.Sit then
+        if targetHRP and targetHum and targetHum.Health > 0 then
+            -- 1. Pega o Sofá
+            pcall(function()  
+                RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")  
+                task.wait(0.2)  
+                RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")  
+            end)  
+            
+            task.wait(0.3)
+            local couch = LPlayer.Backpack:FindFirstChild("Couch")  
+            if couch then couch.Parent = playerChar end  
+            
+            task.wait(0.1)
+            -- Ativa animação/uso do item
+            game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+            
+            -- 2. Configura a Força de Fling para Arrastar
+            local bodyVel = Instance.new("BodyVelocity")
+            bodyVel.Velocity = Vector3.new(900000, 900000, 900000)
+            bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bodyVel.Parent = playerHRP
+            
+            playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+            
+            -- 3. Loop de "Bring" (Vai buscar e traz de volta)
+            local startTime = tick()
+            while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 do
+                local elapsed = tick() - startTime
+                if elapsed > 5 then break end -- Limite de 5 segundos para a operação
+                
+                RunService.Heartbeat:Wait()
+                
+                -- Se estiver longe do alvo, vai até o alvo. Se já pegou o alvo, traz para a originalPos
+                local goal = (elapsed < 2.5) and targetHRP.Position or originalPos.Position
+                
+                playerHRP.CFrame = CFrame.new(goal + Vector3.new(0, 1, 0)) * CFrame.Angles(math.rad(tick()*1000 % 360), 0, 0)
+                playerHRP.Velocity = Vector3.new(900000, 900000, 900000)
+            end
+            
+            -- 4. Limpeza
             bodyVel:Destroy()
-            _G.IsTrapping = false
-            return
-        end
-
-        -- === LOOP 2: LEVAR O PLAYER ATÉ SUA POSIÇÃO ===
-        local bringStart = tick()
-        while _G.IsTrapping
-        and targetHum.Sit
-        and tick() - bringStart < 4 do
-
-            RunService.Heartbeat:Wait()
-            rotation += 40
-
-            playerHRP.CFrame =
-                myOriginalPos
-                * CFrame.Angles(0, math.rad(rotation), 0)
-
-            playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
-            playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
-        end
-
-        -- === LIMPEZA (IGUAL AO KILL) ===
-        bodyVel:Destroy()
-        playerHum:UnequipTools()
-        pcall(function()
-            RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
-        end)
-
-        for _, part in pairs(playerChar:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Velocity = Vector3.zero
-                part.RotVelocity = Vector3.zero
+            playerHumanoid:UnequipTools()
+            pcall(function() RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") end)
+            
+            for _, part in pairs(playerChar:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Velocity = Vector3.zero
+                    part.RotVelocity = Vector3.zero
+                end
             end
         end
 
-        playerHum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-        workspace.CurrentCamera.CameraSubject = playerHum
+        -- Finalização e Retorno
+        playerHRP.CFrame = originalPos
+        playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
         _G.IsTrapping = false
+        
+        Window:Notify({Title = "Bring", Content = "Jogador trazido!", Duration = 2})
     end
 })
 
@@ -4586,6 +4551,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
