@@ -2259,64 +2259,6 @@ AvatarTab:AddButton({
     end
 })
 
-AvatarTab:AddSection("💀 Personagens Hackers Fe ")
-
-AvatarTab:AddButton({
-    Name = "Ativar personagem Goner",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/goner"))()
-    end
-})
-
-AvatarTab:AddButton({
-    Name = "Ativar personagem 1x1x1x1",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/1x1x1x1"))()
-    end
-})
-
-
-AvatarTab:AddSection("FE Personagens Flash")
-
-AvatarTab:AddButton({
-    Name = "Ativar personagem Black Flash",
-    Description = "Ativa o personagem Black Flash FE.",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/Black%20Flash"))()
-    end
-})
-
-AvatarTab:AddButton({
-    Name = "Ativar personagem Flash",
-    Description = "Ativa o personagem Flash FE.",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/Flash%20original"))()
-    end
-})
-
-AvatarTab:AddButton({
-    Name = "Ativar personagem God Flash",
-    Description = "Ativa o personagem God Flash FE.",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/GOD%20FLASH"))()
-    end
-})
-
-AvatarTab:AddButton({
-    Name = "Ativar personagem Zoom Flash",
-    Description = "Ativa o personagem Zoom Flash FE.",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/Zoom%20Flash"))()
-    end
-})
-
-AvatarTab:AddButton({
-    Name = "Ativar personagem Flash Reverso",
-    Description = "Ativa o personagem Flash Reverso FE.",
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/flash%20reverso%20slk%20compen"))()
-    end
-})
 
 
 local PlayerDrop = VeloTab:AddDropdown({
@@ -4329,6 +4271,65 @@ FETab:AddButton({
     end
 })
 
+FETab:AddSection("💀 Personagens Hackers Fe ")
+
+FETab:AddButton({
+    Name = "Ativar personagem Goner",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/goner"))()
+    end
+})
+
+FETab:AddButton({
+    Name = "Ativar personagem 1x1x1x1",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/1x1x1x1"))()
+    end
+})
+
+
+FETab:AddSection("FE Personagens Flash")
+
+FRTab:AddButton({
+    Name = "Ativar personagem Black Flash",
+    Description = "Ativa o personagem Black Flash FE.",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/Black%20Flash"))()
+    end
+})
+
+FETab:AddButton({
+    Name = "Ativar personagem Flash",
+    Description = "Ativa o personagem Flash FE.",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/Flash%20original"))()
+    end
+})
+
+FETab:AddButton({
+    Name = "Ativar personagem God Flash",
+    Description = "Ativa o personagem God Flash FE.",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/GOD%20FLASH"))()
+    end
+})
+
+FETab:AddButton({
+    Name = "Ativar personagem Zoom Flash",
+    Description = "Ativa o personagem Zoom Flash FE.",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/Zoom%20Flash"))()
+    end
+})
+
+FETab:AddButton({
+    Name = "Ativar personagem Flash Reverso",
+    Description = "Ativa o personagem Flash Reverso FE.",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Dboas123432sx/personagem/refs/heads/main/flash%20reverso%20slk%20compen"))()
+    end
+})
+
 -- [[ SEÇÃO: ATRIBUTOS ]]
 FuncoesTab:AddSection("Atributos do Jogador")
 
@@ -4561,6 +4562,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
