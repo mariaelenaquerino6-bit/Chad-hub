@@ -44,6 +44,7 @@ _G.FunVictim = ""
 _G.SelectedFling = "Fling School Bus"
 _G.SelectedAvatarPlayer = "nil"
 _G.RGBFlash = false
+_G.AvatarPlayer
 
 -- [[ FUNÇÕES ORIGINAIS ]]
 local function To(x, y, z, localName)
@@ -1944,73 +1945,31 @@ TeleportTab:AddDropdown({
 -- [[ Configuração da Aba Avatar ]]
 AvatarTab:AddSection("Copiar avatar dos jogadores")
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-
-local Target = nil
-
--- Função para obter os nomes dos jogadores
-local function GetPlayerNames()
-    local PlayerNames = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        table.insert(PlayerNames, player.Name)
-    end
-    return PlayerNames
-end
-
--- Dropdown de seleção de jogador
-local Dropdown = AvatarTab:AddDropdown({
+local PlayerDropdown = AvatarTab:AddDropdown({
     Name = "Selecionar Jogador",
-    Options = GetPlayerNames(),
-    Default = nil,
-    Callback = function(Value)
-        Target = Value
-        print("Jogador selecionado:", Target)
-    end
+    Options = {},
+    Callback = function(v) _G.AvatarPlayer = v end
 })
 
--- Atualiza opções do dropdown quando alguém entra ou sai
-local function UpdateDropdown()
-    local newPlayerNames = GetPlayerNames()
-    Dropdown:SetOptions(newPlayerNames)
-    
-    -- Resetar seleção se o jogador saiu do jogo
-    if Target then
-        local playerStillInGame = false
-        for _, name in ipairs(newPlayerNames) do
-            if name == Target then
-                playerStillInGame = true
-                break
-            end
+task.spawn(function()
+    while true do
+        local names = {}
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LPlayer then table.insert(names, v.Name) end
         end
-        
-        if not playerStillInGame then
-            Target = nil
-        end
+        PlayerDropdown:NewOptions(names)
+        task.wait(5)
     end
-end
-
-Players.PlayerAdded:Connect(function(player)
-    print("Jogador entrou:", player.Name)
-    UpdateDropdown()
 end)
-
-Players.PlayerRemoving:Connect(function(player)
-    print("Jogador saindo:", player.Name)
-    UpdateDropdown()
-end)
-
-UpdateDropdown()
 
 AvatarTab:AddButton({
     Name = "Copiar Avatar",
     Callback = function()
-        if not Target then return end
+        if not _G.AvatarPlayer then return end
 
         local LP = Players.LocalPlayer
         local LChar = LP.Character
-        local TPlayer = Players:FindFirstChild(Target)
+        local TPlayer = Players:FindFirstChild(_G.AvatarPlayer)
 
         if TPlayer and TPlayer.Character then
             local LHumanoid = LChar and LChar:FindFirstChildOfClass("Humanoid")
@@ -4626,6 +4585,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
