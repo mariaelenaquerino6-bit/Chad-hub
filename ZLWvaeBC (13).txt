@@ -26,8 +26,6 @@ local Players = game.Players
 local Remotes = RS:WaitForChild("RE")
 
 _G.AntiSit = false
-_G.RGBName = false
-_G.RGBBody = false
 _G.SelectedPlayer = ""
 _G.KillMode = "Kill Couch (Individual)"
 _G.IsTrapping = false
@@ -46,12 +44,6 @@ _G.FunVictim = ""
 _G.SelectedFling = "Fling School Bus"
 _G.SelectedAvatarPlayer = "nil"
 _G.RGBFlash = false
-
-local BodyColors = {
-    "Deep red", "Red", "Deep orange", "Light orange", "Yellow", "Light yellow", 
-    "Lime green", "Green", "Teal", "Cyan", "Light blue", "Blue", "Deep blue", 
-    "Magenta", "Pink", "White", "Grey", "Purple"
-}
 
 -- [[ FUNÇÕES ORIGINAIS ]]
 local function To(x, y, z, localName)
@@ -74,6 +66,7 @@ local VeloTab = Window:MakeTab({ Title = "Carros", Icon = "Car" })
 local HouseTab = Window:MakeTab({ Title = "House", Icon = "Home" })
 local AudioTab = Window:MakeTab({ Title = "Áudio All", Icon = "music" })
 local FunTab = Window:MakeTab({ Title = "Fun", Icon = "baby" })
+local RGBTab = Window:MakeTab({ Title= "RGB", Icon = "palette" })
 local FETab = Window:MakeTab({ Title = "FE", Icon = "file-stack" })
 local FuncoesTab = Window:MakeTab({ Title = "Funções", Icon = "star" })
 local UniversalTab = Window:MakeTab({ Title = "Scipts Universais", Icon = "plane" })
@@ -3391,6 +3384,141 @@ FunTab:AddToggle({
     end
 })
 
+-- Variáveis de controlo
+local colorSpeed = 5
+local isHairActive = false
+local isNameActive = false
+local isBioActive = false
+local toggleActive = false
+local rgbEnabled = false
+
+-- Tabelas de Cores
+local hairColors = {
+    Color3.new(1, 1, 0), Color3.new(0, 0, 1), Color3.new(1, 0, 1), Color3.new(1, 1, 1),
+    Color3.new(0, 1, 0), Color3.new(0.5, 0, 1), Color3.new(1, 0.647, 0), Color3.new(0, 1, 1)
+}
+
+local vibrantColors = {
+    Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 0, 255),
+    Color3.fromRGB(255, 255, 0), Color3.fromRGB(255, 0, 255), Color3.fromRGB(0, 255, 255),
+    Color3.fromRGB(255, 165, 0), Color3.fromRGB(128, 0, 128), Color3.fromRGB(255, 20, 147)
+}
+
+local colors = { "Bright red", "Lime green", "Bright blue", "Bright yellow", "Bright cyan", "Hot pink", "Royal purple" }
+
+RGBTab:AddSection("Configurações de Velocidade")
+
+-- Slider de velocidade (Sintaxe: Name, Min, Max, Increment, Default, Callback)
+RGBTab:AddSlider({
+    Name = "Velocidade das Cores",
+    Min = 1,
+    Max = 25,
+    Increment = 1,
+    Default = colorSpeed,
+    Callback = function(Value)
+        colorSpeed = Value
+    end
+})
+
+RGBTab:AddSection("Efeitos Visuais")
+
+-- Toggles de ativação
+RGBTab:AddToggle({
+    Name = "Cabelo LGBT",
+    Description = "Ciclo de cores no cabelo",
+    Default = false,
+    Callback = function(value)
+        isHairActive = value
+    end
+})
+
+RGBTab:AddToggle({
+    Name = "Nome LGBT",
+    Description = "Ciclo de cores no nome RP",
+    Default = false,
+    Callback = function(value)
+        isNameActive = value
+    end
+})
+
+RGBTab:AddToggle({
+    Name = "Bio LGBT",
+    Description = "Ciclo de cores na biografia",
+    Default = false,
+    Callback = function(value)
+        isBioActive = value
+    end
+})
+
+RGBTab:AddToggle({
+    Name = "Rosas LGBT",
+    Description = "Ciclo de cores nas rosas",
+    Default = false,
+    Callback = function(value)
+        toggleActive = value
+    end
+})
+
+RGBTab:AddToggle({
+    Name = "Personagem RGB",
+    Description = "Ciclo de cores no corpo",
+    Default = false,
+    Callback = function(value)
+        rgbEnabled = value
+    end
+})
+
+-- Loop de processamento de cores
+task.spawn(function()
+    local iHair, iName, iBio, iChar = 1, 1, 1, 1
+    while true do
+        pcall(function()
+            if isHairActive then
+                local remote = ReplicatedStorage.RE:FindFirstChild("1Max1y")
+                if remote then remote:FireServer("ChangeHairColor2", hairColors[iHair]) end
+                iHair = iHair % #hairColors + 1
+            end
+
+            if isNameActive then
+                local remote = ReplicatedStorage.RE:FindFirstChild("1RPNam1eColo1r")
+                if remote then remote:FireServer("PickingRPNameColor", vibrantColors[iName]) end
+                iName = iName % #vibrantColors + 1
+            end
+
+            if isBioActive then
+                local remote = ReplicatedStorage.RE:FindFirstChild("1RPNam1eColo1r")
+                if remote then remote:FireServer("PickingRPBioColor", vibrantColors[iBio]) end
+                iBio = iBio % #vibrantColors + 1
+            end
+
+            if rgbEnabled then
+                local remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ChangeBodyColor")
+                if remote then remote:FireServer(colors[iChar]) end
+                iChar = iChar % #colors + 1
+            end
+
+            if toggleActive then
+                local char = LocalPlayer.Character
+                local rosas = char and char:FindFirstChild("Roses")
+                if rosas and rosas:FindFirstChild("ToolSound") then
+                    local ids = {
+                        "rbxassetid://5210399458",
+                        "rbxassetid://5210414520",
+                        "rbxassetid://5216708760",
+                        "rbxassetid://5210414112"
+                    }
+                    for _, id in ipairs(ids) do
+                        rosas.ToolSound:FireServer("Roses", id)
+                        task.wait(0.1)
+                    end
+                end
+            end
+        end)
+
+        task.wait(1 / colorSpeed)
+    end
+end)
+
 getgenv()._Running = false
 
 getgenv().CustomText = "HELLO"
@@ -4464,6 +4592,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
