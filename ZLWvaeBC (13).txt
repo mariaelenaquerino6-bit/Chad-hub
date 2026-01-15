@@ -4534,45 +4534,6 @@ game:GetService("RunService").RenderStepped:Connect(function(dt)
 end)
 
 
--- [[ TOGGLE PARA ATIVAR/DESATIVAR ]]
-DiscordTab:AddToggle({
-  Name = "Notificar Entradas/Saídas",
-  Description = "Ativa avisos visuais no canto da tela",
-  Default = false,
-  Callback = function(Value)
-    NotificarAtivo = Value
-    
-    Window:Notify({
-      Title = "Sistema de Notificação",
-      Content = Value and "Ativado com sucesso!" or "Desativado com sucesso!",
-      Duration = 3
-    })
-  end
-})
-
--- [[ LÓGICA DE DETEÇÃO - ENTRADA ]]
-Players.PlayerAdded:Connect(function(Player)
-  if NotificarAtivo then
-    Window:Notify({
-      Title = "☃️Novo Jogador",
-      Content = Player.DisplayName .. " (@" .. Player.Name .. ") entrou no servidor!",
-      Duration = 7
-    })
-  end
-end)
-
--- [[ LÓGICA DE DETEÇÃO - SAÍDA ]]
-Players.PlayerRemoving:Connect(function(Player)
-  if NotificarAtivo then
-    Window:Notify({
-      Title = "🚪 Jogador Saiu",
-      Content = Player.DisplayName .. " saiu do servidor.",
-      Duration = 7
-    })
-  end
-end)
-
-
 DiscordTab:AddDiscordInvite({
 	Title = "redz black Comunity",
 	Description = "Red Black hub",
@@ -4602,6 +4563,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
