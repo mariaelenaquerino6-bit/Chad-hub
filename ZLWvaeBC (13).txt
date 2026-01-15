@@ -4290,7 +4290,7 @@ FETab:AddButton({
 
 FETab:AddSection("FE Personagens Flash")
 
-FRTab:AddButton({
+FETab:AddButton({
     Name = "Ativar personagem Black Flash",
     Description = "Ativa o personagem Black Flash FE.",
     Callback = function()
@@ -4562,6 +4562,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
