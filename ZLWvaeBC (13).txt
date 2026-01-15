@@ -44,7 +44,6 @@ _G.FunVictim = ""
 _G.SelectedFling = "Fling School Bus"
 _G.SelectedAvatarPlayer = "nil"
 _G.RGBFlash = false
-_G.AvatarPlayer
 
 -- [[ FUNÇÕES ORIGINAIS ]]
 local function To(x, y, z, localName)
@@ -4563,6 +4562,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
