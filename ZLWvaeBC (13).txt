@@ -121,6 +121,8 @@ OPTab:AddButton({
 })
 
 
+
+-- [[ VARIÁVEIS DE CONTROLO ]]
 local skyboxFirstActivation = false
 local skyboxActivatedByUser = false
 local CurrentTrack = nil
@@ -128,15 +130,18 @@ local Settings = {
     ["Fade Out"] = 0.1
 }
 
+-- [[ LÓGICA DA SKYBOX ]]
+OPTab:AddSection("Customização de Ambiente")
+
 OPTab:AddToggle({
     Name = "Ativar Skybox FE",
-    Description = "Para trocar a Skybox, basta mudar a sua camisa no Roblox.",
+    Description = "Muda a tua camisa no Roblox para trocar a Skybox.",
     Flag = "ToggleSkyboxFE",
     Callback = function(enabled)
         local Remotes = game:GetService("ReplicatedStorage")
         local Player = game:GetService("Players").LocalPlayer
         
-        -- 🔹 FUNÇÃO LoadTrack DO PLAYER DE EMOTES
+        -- Função para carregar animações (Tracks)
         local function LoadTrack(id)
             if CurrentTrack then
                 CurrentTrack:Stop(0)
@@ -166,7 +171,7 @@ OPTab:AddToggle({
             return newTrack
         end
         
-        -- 🔹 FUNÇÃO StopTrack DO PLAYER DE EMOTES
+        -- Função para parar animações
         local function StopTrack()
             if CurrentTrack then
                 CurrentTrack:Stop(Settings["Fade Out"])
@@ -187,7 +192,6 @@ OPTab:AddToggle({
                 
                 local humanoid = (Player.Character or Player.CharacterAdded:Wait()):FindFirstChildOfClass("Humanoid")
                 if humanoid then
-                    -- Para qualquer animação atual e carrega a nova
                     LoadTrack("93224413172183")
                     
                     task.wait(0.5)
@@ -199,14 +203,21 @@ OPTab:AddToggle({
                     idleTrack:Play(0.1, 1, 0)
                 end
                 
-                Window:Notify("Skybox FE", "Ativado com sucesso!")
+                Window:Notify({
+                    Title = "Skybox FE",
+                    Content = "Ativado com sucesso!",
+                    Duration = 5
+                })
             else
                 if not skyboxActivatedByUser then
-                    Window:Notify("Skybox FE", "Ignorado: não foi ativado por você.")
+                    Window:Notify({
+                        Title = "Skybox FE",
+                        Content = "Ignorado: não foi ativado por ti.",
+                        Duration = 5
+                    })
                     return
                 end
                 
-                -- 🔹 PARA A ANIMAÇÃO ANTES DE RESETAR
                 StopTrack()
                 
                 pcall(function()
@@ -221,7 +232,11 @@ OPTab:AddToggle({
                     hum.Health = 0
                 end
                 
-                Window:Notify("Skybox FE", "Desativado e aparência restaurada!")
+                Window:Notify({
+                    Title = "Skybox FE",
+                    Content = "Desativado e aparência restaurada!",
+                    Duration = 5
+                })
                 skyboxActivatedByUser = false
             end
         else
@@ -232,6 +247,7 @@ OPTab:AddToggle({
         end
     end
 })
+
 
 OPTab:AddSection("FlashBang/Nuke")
 
@@ -4562,6 +4578,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
