@@ -2094,37 +2094,6 @@ AvatarTab:AddButton({
 })
 
 
-AvatarTab:AddSection("Avatar effects")
-
-AvatarTab:AddToggle({
-	Name = "Rgb Name",
-	Callback = function(Value)
-		_G.RGBName = Value
-		task.spawn(function()
-			while _G.RGBName do
-				local color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
-				RS:WaitForChild("RE"):WaitForChild("1RPNam1eColo1r"):FireServer("PickingRPNameColor", color)
-				task.wait(0.5)
-			end
-		end)
-	end
-})
-
-AvatarTab:AddToggle({
-	Name = "Rgb Body",
-	Callback = function(Value)
-		_G.RGBBody = Value
-		task.spawn(function()
-			local i = 1
-			while _G.RGBBody do
-				RS:WaitForChild("Remotes"):WaitForChild("ChangeBodyColor"):FireServer(BodyColors[i])
-				i = (i % #BodyColors) + 1
-				task.wait(0.4)
-			end
-		end)
-	end
-})
-
 AvatarTab:AddSection("Identidades Hacker")
 AvatarTab:AddDropdown({
 	Name = "Selecionar Nome Hacker",
@@ -2151,7 +2120,7 @@ AvatarTab:AddToggle({
         if state then
             local bodyArgs = {
                 [1] = {
-                    [1] = 17713016036;
+                    [1] = 177130166;
                     [2] = 17713016151;
                     [3] = 17713015861;
                     [4] = 17713021340;
@@ -3424,7 +3393,7 @@ RGBTab:AddSection("Efeitos Visuais")
 
 -- Toggles de ativação
 RGBTab:AddToggle({
-    Name = "Cabelo LGBT",
+    Name = "Cabelo RGB",
     Description = "Ciclo de cores no cabelo",
     Default = false,
     Callback = function(value)
@@ -3433,7 +3402,7 @@ RGBTab:AddToggle({
 })
 
 RGBTab:AddToggle({
-    Name = "Nome LGBT",
+    Name = "Nome RGB",
     Description = "Ciclo de cores no nome RP",
     Default = false,
     Callback = function(value)
@@ -3442,7 +3411,7 @@ RGBTab:AddToggle({
 })
 
 RGBTab:AddToggle({
-    Name = "Bio LGBT",
+    Name = "Bio RGB",
     Description = "Ciclo de cores na biografia",
     Default = false,
     Callback = function(value)
@@ -3451,7 +3420,7 @@ RGBTab:AddToggle({
 })
 
 RGBTab:AddToggle({
-    Name = "Rosas LGBT",
+    Name = "Rosas RGB",
     Description = "Ciclo de cores nas rosas",
     Default = false,
     Callback = function(value)
@@ -4592,6 +4561,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
