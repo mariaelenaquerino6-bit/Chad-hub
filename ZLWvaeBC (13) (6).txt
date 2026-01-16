@@ -60,9 +60,10 @@ end
 local OPTab = Window:MakeTab({ Title = "OP", Icon = "crown" })
 local MainTab = Window:MakeTab({ Title = "Troll Players", Icon = "rbxassetid://13364900349" })
 local ProtTab = Window:MakeTab({ Title = "Proteção", Icon = "Shield" })
-local TeleportTab = Window:MakeTab({ Title = "Teleporta", Icon = "Map" })
+local TeleportTab = Window:MakeTab({ Title = "Teleports", Icon = "Map" })
 local AvatarTab = Window:MakeTab({ Title = "Avatar", Icon = "Shirt" })
 local VeloTab = Window:MakeTab({ Title = "Carros", Icon = "Car" })
+local LagTab = Window:MakeTab({ Title = "Lag Server", Icon = "computer" })
 local HouseTab = Window:MakeTab({ Title = "House", Icon = "Home" })
 local AudioTab = Window:MakeTab({ Title = "Áudio All", Icon = "music" })
 local FunTab = Window:MakeTab({ Title = "Fun", Icon = "baby" })
@@ -2596,6 +2597,81 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- Variáveis de Estado
+local SelectedMethod = "Telefone"
+local LagActive = false
+
+-- Função Principal de Lag
+local function runLagLoop()
+    task.spawn(function()
+        while LagActive do
+            pcall(function()
+                local char = lp.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
+
+                if SelectedMethod == "Telefone" then
+                    local phone = Workspace:FindFirstChild("WorkspaceCom"):FindFirstChild("001_CommercialStores"):FindFirstChild("CommercialStorage1"):FindFirstChild("Store"):FindFirstChild("Tools"):FindFirstChild("Iphone")
+                    if phone then
+                        hrp.CFrame = phone.CFrame
+                        if phone:FindFirstChild("ClickDetector") then fireclickdetector(phone.ClickDetector) end
+                    end
+                elseif SelectedMethod == "Bomba" then
+                    local bomb = Workspace:FindFirstChild("WorkspaceCom"):FindFirstChild("001_CriminalWeapons"):FindFirstChild("GiveTools"):FindFirstChild("Bomb")
+                    if bomb then
+                        hrp.CFrame = bomb.CFrame
+                        if bomb:FindFirstChild("ClickDetector") then fireclickdetector(bomb.ClickDetector) end
+                        ReplicatedStorage:WaitForChild("RE"):WaitForChild("1Blo1wBomb1sServe1r"):FireServer("Bomb"..lp.Name)
+                    end
+                elseif SelectedMethod == "Extintor" then
+                    local giveTools = Workspace:FindFirstChild("WorkspaceCom"):FindFirstChild("001_GiveTools")
+                    local ext = giveTools and giveTools:FindFirstChild("FireX")
+                    if ext then
+                        hrp.CFrame = ext.CFrame
+                        if ext:FindFirstChild("ClickDetector") then fireclickdetector(ext.ClickDetector) end
+                    end
+                end
+            end)
+            task.wait(0.01) -- Velocidade máxima de spam
+        end
+    end)
+end
+
+-- Interface
+LagTab:AddSection("Configuração de Ataque")
+
+LagTab:AddDropdown({
+    Name = "Método de Lag",
+    Description = "Escolha o item que será usado para o lag",
+    Options = {"Telefone", "Bomba", "Extintor"},
+    Default = "Telefone",
+    Callback = function(Value)
+        SelectedMethod = Value
+    end
+})
+
+LagTab:AddToggle({
+    Name = "Executar Lag",
+    Description = "Ativa ou desativa o loop de lag selecionado",
+    Default = false,
+    Callback = function(Value)
+        LagActive = Value
+        if Value then
+            runLagLoop()
+            Window:Notify({
+                Title = "Lag Iniciado",
+                Content = "Executando lag via: " .. SelectedMethod,
+                Duration = 4
+            })
+        else
+            Library:Notify({
+                Title = "Lag Parado",
+                Content = "O loop de execução foi encerrado.",
+                Duration = 3
+            })
+        end
+    end
+})
 
 local SelectHouse = nil
 local NoclipDoor = nil
@@ -4770,6 +4846,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
