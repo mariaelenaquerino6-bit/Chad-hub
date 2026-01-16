@@ -2009,7 +2009,7 @@ AvatarTab:AddDropdown({
 })
 
 -- [[ SEÇÃO DE SKINS ESPECIAIS ]]
-AvatarTab:AddSection("Skins Especiais (Corpos)")
+AvatarTab:AddSection("Corpos")
 
 AvatarTab:AddButton({
     Name = "Mini Plush",
@@ -2217,7 +2217,7 @@ VeloTab:AddButton({
                 Duration = 4
             })
         else
-            Library:Notify({
+            Window:Notify({
                 Title = "Erro",
                 Content = "Carro não encontrado no servidor!",
                 Duration = 4
@@ -4386,6 +4386,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
