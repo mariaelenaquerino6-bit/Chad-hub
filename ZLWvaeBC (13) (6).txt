@@ -914,67 +914,87 @@ MainTab:AddToggle({
     Name = "Auto Fling (Método Selecionado)",
     Default = false,
     Callback = function(state)
+        _G.AutoFlingActive = state
+        
         if state then
             -- Verificações iniciais
             if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
-                Window:Notify({Title = "Erro", Content = "Selecione um jogador primeiro!", Duration = 3})
                 return
             end
             if not _G.SelectedFling then
-                Window:Notify({Title = "Erro", Content = "Selecione um método de fling primeiro!", Duration = 3})
+                return
+            end
+            
+            -- Verifica se o método selecionado é Fling Boat (não permitido)
+            if _G.SelectedFling == "Fling - Boat" then
+                Window:Notify({
+                    Title = "Erro",
+                    Content = "Método Fling - Boat não disponível para Auto Fling",
+                    Duration = 3
+                })
                 return
             end
             
             -- Inicia o loop de auto fling
             task.spawn(function()
-                while state do -- Usa o estado da toggle diretamente
+                while _G.AutoFlingActive do
                     local target = game.Players:FindFirstChild(_G.SelectedPlayer)
                     
                     if not target then
-                        Window:Notify({Title = "Auto Fling", Content = "Jogador alvo não encontrado!", Duration = 3})
                         break
                     end
                     
                     -- Espera o jogador ter um character válido
-                    repeat
+                    local waitCount = 0
+                    while waitCount < 30 and _G.AutoFlingActive do
+                        if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character.Humanoid.Health > 0 then
+                            break
+                        end
                         task.wait(1)
-                    until target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character.Humanoid.Health > 0
+                        waitCount = waitCount + 1
+                    end
                     
-                    -- Executa o método selecionado
+                    if not _G.AutoFlingActive then break end
+                    
+                    -- Executa o método selecionado (excluindo Fling Boat)
                     if _G.SelectedFling == "Fling School Bus" then
                         FlingSchoolBus(target)
-                    elseif _G.SelectedFling == "Fling - Boat" then
-                        FlingBoat(target)
                     elseif _G.SelectedFling == "Fling Ball" then
                         FlingBall(target)
+                    else
+                        -- Se chegou aqui com outro método, para o loop
+                        break
                     end
                     
                     -- Espera o fling terminar ou jogador morrer
                     local startTime = tick()
-                    while target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 do
+                    while _G.AutoFlingActive and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 do
                         if tick() - startTime > 15 then -- Timeout de 15 segundos
                             break
                         end
                         task.wait(0.5)
                     end
                     
+                    if not _G.AutoFlingActive then break end
+                    
                     -- Espera o respawn (se morreu)
                     if target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health <= 0 then
-                        repeat
+                        local respawnTime = 0
+                        while _G.AutoFlingActive and respawnTime < 30 do
+                            if target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 then
+                                break
+                            end
                             task.wait(1)
-                        until target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0
+                            respawnTime = respawnTime + 1
+                        end
                     end
                     
                     task.wait(2) -- Intervalo entre execuções
                 end
             end)
-        else
-            -- Toggle desativado - o loop será interrompido naturalmente
-            Window:Notify({Title = "Auto Fling", Content = "Auto Fling desativado!", Duration = 3})
         end
     end
 })
-
 
 MainTab:AddSection("Methods ALL")
     
@@ -1405,98 +1425,7 @@ MainTab:AddButton({
 })
 print("Fling Boat All button created")
 
-local flingAllBike = false
-
--- [[ FLING ALL TOGGLE ]] --
-MainTab:AddToggle({
-    Name = "Fling ALL Bike",
-    Description = "Está no Beta então não reclame de bugs!",
-    Default = false,
-    Callback = function(Value)
-        flingAllBike = Value
-        local lp = game.Players.LocalPlayer
-        local rs = game:GetService("ReplicatedStorage")
-        local runService = game:GetService("RunService")
-        
-        if flingAllLoop then
-            local originalCF = lp.Character.HumanoidRootPart.CFrame
-            
-            task.spawn(function()
-                while flingAllBike do
-                    for _, targetPlayer in pairs(game.Players:GetPlayers()) do
-                        if not flingAllBike then break end -- Para o loop se o toggle for desligado
-                        
-                        if targetPlayer ~= lp and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                            local hrp = lp.Character.HumanoidRootPart
-                            local targetHRP = targetPlayer.Character.HumanoidRootPart
-                            
-                            -- Notificação Rápida
-                            Window:Notify({Title = "Atacando", Content = targetPlayer.Name, Duration = 1})
-                            
-                            -- Spawn Bike
-                            rs.RE["1NoMoto1rVehicle1s"]:FireServer("TandemBike")
-                            task.wait(0.3)
-                            
-                            -- Noclip
-                            local noclip = runService.Stepped:Connect(function()
-                                if lp.Character then
-                                    for _, v in pairs(lp.Character:GetDescendants()) do
-                                        if v:IsA("BasePart") then v.CanCollide = false end
-                                    end
-                                end
-                            end)
-
-                            -- Forças
-                            local bv = Instance.new("BodyVelocity", hrp)
-                            bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
-                            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                            
-                            local bav = Instance.new("BodyAngularVelocity", hrp)
-                            bav.AngularVelocity = Vector3.new(9e8, 9e8, 9e8)
-                            bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-
-                            -- Ataque (2.5 segundos por player para ser eficiente)
-                            local startAttack = tick()
-                            while flingAllLoop and tick() - startAttack < 2.5 do
-                                if not targetHRP.Parent then break end
-                                hrp.CFrame = targetHRP.CFrame * CFrame.Angles(math.rad(math.random(-360,360)), math.rad(math.random(-360,360)), 0)
-                                hrp.Velocity = Vector3.new(9e8, 9e8, 9e8)
-                                task.wait()
-                            end
-
-                            -- Limpeza entre players
-                            bv:Destroy()
-                            bav:Destroy()
-                            noclip:Disconnect()
-                            rs.RE["1NoMoto1rVehicle1s"]:FireServer("Delete NoMotorVehicle")
-                            task.wait(0.1)
-                        end
-                    end
-                    task.wait(0.1)
-                end
-                
-                -- [[ RETORNO SEGURO QUANDO DESLIGAR ]] --
-                local finalHRP = lp.Character.HumanoidRootPart
-                finalHRP.Anchored = true
-                finalHRP.Velocity = Vector3.zero
-                finalHRP.CFrame = originalCF + Vector3.new(0, 2, 0)
-                task.wait(0.2)
-                finalHRP.Anchored = false
-                
-                -- Reset de Colisão
-                for _, v in pairs(lp.Character:GetDescendants()) do
-                    if v:IsA("BasePart") then v.CanCollide = true end
-                end
-                
-                Window:Notify({Title = "Fling All", Content = "Desativado e Retornado!", Duration = 3})
-            end)
-        end
-    end
-})
-
-
-MainTab:AddSection("Flings Locais")
-
+MainTab:AddSection("Tornado Locais")
 
 -- [[ LOCAIS SELECIONÁVEIS ]]
 local tornados = {
@@ -4547,6 +4476,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
