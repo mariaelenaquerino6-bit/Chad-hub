@@ -1,8 +1,8 @@
 local Library = loadstring(game:HttpGet("https://gitlab.com/duscordteste/redzlib-v6-chad/-/raw/main/main.luau__2_.txt"))()
 
 local Window = Library:MakeWindow({
-  Title = "CHAD HUB",
-  SubTitle = "Beta Edition",
+  Title = "Chad Hub V1",
+  SubTitle = "Brookhaven",
   Icon = "rbxassetid://137457193090415",
   ScriptFolder = "ChadHubV5"
 })
@@ -4713,34 +4713,6 @@ DiscordTab:AddToggle({
     end
 })
 
--- Toggle para Mortes
-DiscordTab:AddToggle({
-    Name = "Notificar Mortes",
-    Description = "Avisa quando um jogador morre ou dá reset.",
-    Default = false,
-    Callback = function(Value)
-        Settings.NotifyDeaths = Value
-    end
-})
-
--- [[ LÓGICA DE MONITORIZAÇÃO ]]
-
--- Função para monitorizar a morte de um jogador específico
-local function WatchDeath(Player)
-    Player.CharacterAppearanceLoaded:Connect(function(Character)
-        local Humanoid = Character:WaitForChild("Humanoid")
-        Humanoid.Died:Connect(function()
-            if Settings.NotifyDeaths then
-                Window:Notify({
-                    Title = "💀 Jogador Morreu",
-                    Content = Player.DisplayName .. " (@" .. Player.Name .. ") foi eliminado!",
-                    Duration = 5
-                })
-            end
-        end)
-    end)
-end
-
 -- Evento de Entrada
 Players.PlayerAdded:Connect(function(Player)
     if Settings.NotifyJoinLeave then
@@ -4798,6 +4770,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
