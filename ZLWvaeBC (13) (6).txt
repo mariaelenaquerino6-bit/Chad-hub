@@ -1,4 +1,4 @@
-local Library = loadstring(game:HttpGet("https://gitlab.com/duscordteste/redzlib-v6-chad/-/raw/main/main.luau__2_.txt"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bjair5955-wq/Redz-Lib-Chad-v1/refs/heads/main/main.luau__2_%20(1).txt"))()
 
 local Window = Library:MakeWindow({
   Title = "Chad Hub V1",
@@ -2598,96 +2598,6 @@ RunService.Heartbeat:Connect(function()
 end)
 
 
--- Configurações Técnicas
-local lagConfig = {
-    ["Laptop"] = { pos = Vector3.new(-117.5, 32.4, 29.45), path = {"WorkspaceCom", "001_GiveTools", "Laptop"} },
-    ["Extintor"] = { pos = Vector3.new(-471.24, 3.8, -152.46), path = {"WorkspaceCom", "001_GiveTools", "FireX"} },
-    ["Bomba"] = { pos = Vector3.new(-141.42, -29.97, 243.2), path = {"WorkspaceCom", "001_CriminalWeapons", "GiveTools", "Bomb"} },
-    ["Maca"] = { pos = Vector3.new(-340.68, 3.04, 28.59), path = {"WorkspaceCom", "001_GiveTools", "Stretcher"} }
-}
-
-local itensSelecionados = {}
-local lagAtivo = false
-local lagConnection = nil
-
--- Função Otimizada para Achar o Item
-local function GetItemPart(itemKey)
-    local config = lagConfig[itemKey]
-    if not config then return nil end
-
-    local current = Workspace
-    for _, name in ipairs(config.path) do
-        current = current:FindFirstChild(name)
-        if not current then return nil end
-    end
-    
-    local click = current:FindFirstChild("ClickDetector")
-    return click and {Part = current, Click = click} or nil
-end
-
--- Dropdown Multi-Select
-LagTab:AddDropdown({
-  Name = "Escolher Método De Lag",
-  Description = "Selecione múltiplos itens para o Lag ",
-  Options = {"Laptop", "Extintor", "Bomba", "Maca"},
-  Default = {},
-  Callback = function(Value)
-      itensSelecionados = Value
-  end
-})
-
--- Toggle de Execução (Botão de Ligar)
-LagTab:AddToggle({
-  Name = "Executar Lag Server",
-  Description = "Inicia o Lag Server",
-  Default = false,
-  Callback = function(Value)
-      lagAtivo = Value
-      
-      if lagAtivo then
-          if not itensSelecionados or #itensSelecionados == 0 then
-              Window:Notify({
-                  Title = "Erro",
-                  Content = "Selecione o iten no Dropdown!",
-                  Duration = 3
-              })
-              return
-          end
-
-          lagConnection = RunService.Heartbeat:Connect(function()
-              local char = LocalPlayer.Character
-              local hrp = char and char:FindFirstChild("HumanoidRootPart")
-              
-              if hrp and lagAtivo then
-                  for _, itemName in ipairs(itensSelecionados) do
-                      local itemData = GetItemPart(itemName)
-                      if itemData then
-                          -- Teleporte instantâneo
-                          hrp.CFrame = CFrame.new(lagConfig[itemName].pos)
-                          
-                          -- Spam de Clique
-                          pcall(function()
-                              fireclickdetector(itemData.Click)
-                          end)
-                      end
-                  end
-              end
-              -- VELOCIDADE MÁXIMA (CUIDADO)
-              task.wait() -- Sem argumentos = o mais rápido possível (aprox 0.03s)
-          end)
-          
-          Window:Notify({Title = "Sucesso", Content = "Spam iniciado na velocidade máxima!", Duration = 3})
-      else
-          if lagConnection then
-              lagConnection:Disconnect()
-              lagConnection = nil
-          end
-          Window:Notify({Title = "Status", Content = "Spam parado.", Duration = 3})
-      end
-  end
-})
-
-
 local SelectHouse = nil
 local NoclipDoor = nil
 
@@ -4861,6 +4771,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
