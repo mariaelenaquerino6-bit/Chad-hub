@@ -63,7 +63,6 @@ local ProtTab = Window:MakeTab({ Title = "Proteção", Icon = "Shield" })
 local TeleportTab = Window:MakeTab({ Title = "Teleports", Icon = "Map" })
 local AvatarTab = Window:MakeTab({ Title = "Avatar", Icon = "Shirt" })
 local VeloTab = Window:MakeTab({ Title = "Carros", Icon = "Car" })
-local LagTab = Window:MakeTab({ Title = "Lag Server", Icon = "computer" })
 local HouseTab = Window:MakeTab({ Title = "House", Icon = "Home" })
 local AudioTab = Window:MakeTab({ Title = "Áudio All", Icon = "music" })
 local FunTab = Window:MakeTab({ Title = "Fun", Icon = "baby" })
@@ -2597,162 +2596,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-Toggle State for Lag Laptop
-local toggles = { LagLaptop = false }
-
--- Function to Simulate Normal Click
-local function clickNormally(object)
-    local clickDetector = object:FindFirstChildWhichIsA("ClickDetector")
-    if clickDetector then
-        fireclickdetector(clickDetector)
-    end
-end
-
--- Function to Lag Game with Laptop
-local function lagarJogoLaptop(laptopPath, maxTeleports)
-    if laptopPath then
-        local teleportCount = 0
-        while teleportCount < maxTeleports and toggles.LagLaptop do
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = laptopPath.CFrame
-            clickNormally(laptopPath)
-            teleportCount = teleportCount + 1
-            wait(0.0001)
-        end
-    else
-        warn("Laptop nÃ£o encontrado.")
-    end
-end
-
--- Lag Laptop Toggle
-LagTab:AddToggle({
-    Name = "Lag com Laptop",
-    Default = false,
-    Callback = function(state)
-        toggles.LagLaptop = state
-        if state then
-            local laptopPath = workspace:FindFirstChild("WorkspaceCom"):FindFirstChild("001_GiveTools"):FindFirstChild("Laptop")
-            if laptopPath then
-                spawn(function()
-                    lagarJogoLaptop(laptopPath, 999999999)
-                end)
-            else
-                warn("Laptop nÃ£o encontrado.")
-            end
-        else
-            print("Lag com Laptop desativado.")
-        end
-    end
-})
-
--- Lag Laptop Paragraph
-LagTab:AddParagraph({
-    "InformaÃ§Ã£o de Lag",
-    "O efeito de lag começa após 35 segundos"
-})
-
--- Lag Phone Section
-LagTab:AddSection("Lag Com Telefone")
-
--- Toggle State for Lag Phone
-toggles.LagPhone = false
-
--- Function to Lag Game with Phone
-local function lagarJogoPhone(phonePath, maxTeleports)
-    if phonePath then
-        local teleportCount = 0
-        while teleportCount < maxTeleports and toggles.LagPhone do
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = phonePath.CFrame
-            clickNormally(phonePath)
-            teleportCount = teleportCount + 1
-            wait(0.01)
-        end
-    else
-        warn("Telefone nÃ£o encontrado.")
-    end
-end
-
--- Lag Phone Toggle
-LagTab:AddToggle({
-    Name = "Lag com Telefone",
-    Default = false,
-    Callback = function(state)
-        toggles.LagPhone = state
-        if state then
-            local phonePath = workspace:FindFirstChild("WorkspaceCom"):FindFirstChild("001_CommercialStores"):FindFirstChild("CommercialStorage1"):FindFirstChild("Store"):FindFirstChild("Tools"):FindFirstChild("Iphone")
-            if phonePath then
-                spawn(function()
-                    lagarJogoPhone(phonePath, 999999)
-                end)
-            else
-                warn("Telefone nÃ£o encontrado.")
-            end
-        else
-            print("Lag com Telefone desativado.")
-        end
-    end
-})
-
--- Lag Phone Paragraph
-LagTab:AddParagraph({
-    "Informação de Lag",
-    "O script começa a causar lag apos 35 segundos"
-})
-
-LagTab:AddSection("Lag Com Bomba")
-
-local BombActive = false
-
-LagTab:AddToggle({
-    Name = "Lag com Bomba",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            BombActive = true
-
-            local Player = game.Players.LocalPlayer
-            local Character = Player.Character or Player.CharacterAdded:Wait()
-            local RootPart = Character:WaitForChild("HumanoidRootPart")
-            local WorkspaceService = game:GetService("Workspace")
-            local ReplicatedStorage = game:GetService("ReplicatedStorage")
-            local Bomb = WorkspaceService:WaitForChild("WorkspaceCom"):WaitForChild("001_CriminalWeapons"):WaitForChild("GiveTools"):WaitForChild("Bomb")
-
-            task.spawn(function()
-                while BombActive do
-                    if Bomb and RootPart then
-                        RootPart.CFrame = Bomb.CFrame
-                        fireclickdetector(Bomb.ClickDetector) -- Aciona o ClickDetector da bomba
-                        task.wait(0.00001) -- Delay mÃ­nimo para evitar travamentos
-                    else
-                        task.wait(0.0001) 
-                    end
-                end
-            end)
-
-            task.spawn(function()
-                while BombActive do
-                    if Bomb and RootPart then
-                        local VirtualInputManager = game:GetService("VirtualInputManager")
-                        VirtualInputManager:SendMouseButtonEvent(500, 500, 0, true, game, 0) 
-                        task.wait(1.5)
-                        VirtualInputManager:SendMouseButtonEvent(500, 500, 0, false, game, 0) 
-
-                        -- Executa o FireServer com o nome do jogador
-                        local args = {
-                            [1] = "Bomb" .. Player.Name -- Usa o nome do jogador atual
-                        }
-                        ReplicatedStorage:WaitForChild("RE"):WaitForChild("1Blo1wBomb1sServe1r"):FireServer(unpack(args))
-                    end
-                    task.wait(1.5) -- Intervalo de 1 segundo para clique e FireServer
-                end
-            end)
-        else
-            -- Desativando a funcionalidade
-            BombActive = false
-        end
-    end
-})
-
-
 
 local SelectHouse = nil
 local NoclipDoor = nil
@@ -4927,6 +4770,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
