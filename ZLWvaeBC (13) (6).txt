@@ -1465,7 +1465,7 @@ MainTab:AddButton({
 })
 print("Fling Boat All button created")
 
-MainTab:AddSection("Touchs")
+MainTab:AddSection("Touchs/Clicks")
 
 -- [[ VARIÁVEIS DE CONTROLO ]]
 local FlingTouchActive = false
@@ -1587,6 +1587,164 @@ MainTab:AddToggle({
             FlingTouchActive = false
             CurrentBall = nil
         end
+    end
+})
+
+local lp = Players.LocalPlayer
+
+-- [[ 2. FUNÇÃO PARA CRIAR A TOOL ]]
+local function GiveTpTool()
+    local mouse = lp:GetMouse()
+    local tool = Instance.new("Tool")
+    tool.Name = "Tp Tool"
+    tool.RequiresHandle = false
+    tool.CanBeDropped = false
+    
+    -- Evento de Ativação (Quando clicas com a ferramenta na mão)
+    tool.Activated:Connect(function()
+        local pos = mouse.Hit.Position + Vector3.new(0, 3, 0) -- Adiciona um pequeno offset para não spawnar dentro do chão
+        
+        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            lp.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+        end
+    end)
+    
+    tool.Parent = lp.Backpack
+end
+
+MainTab:AddButton({
+    Name = "Click Tp Tool",
+    Callback = function()
+        GiveTpTool()
+        
+        -- Notificação opcional (podes remover se preferires sem avisos)
+        Window:Notify({
+            Title = "Tp Tool",
+            Content = "Ferramenta de Teleporte adicionada ao inventário!",
+            Duration = 3
+        })
+    end
+})
+
+-- [[ FUNÇÃO DE FLING (ADAPTADA DO TEU CÓDIGO) ]]
+local function ExecuteFling(target)
+    local player = lp
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local backpack = player:WaitForChild("Backpack")
+ 
+    local workspaceCom = workspace:FindFirstChild("WorkspaceCom")
+    if not workspaceCom then return end
+    local ServerBalls = workspaceCom:WaitForChild("001_SoccerBalls")
+ 
+    -- Função Interna para pegar a bola
+    local function GetBall()
+        if not backpack:FindFirstChild("SoccerBall") and not character:FindFirstChild("SoccerBall") then
+            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+        end
+ 
+        local tool = backpack:WaitForChild("SoccerBall", 5) or character:FindFirstChild("SoccerBall")
+        if not tool then return nil end
+ 
+        tool.Parent = character
+        local ballName = "Soccer" .. player.Name
+        local foundBall = nil
+        local timeout = tick()
+ 
+        repeat 
+            task.wait() 
+            foundBall = ServerBalls:FindFirstChild(ballName)
+        until foundBall or (tick() - timeout > 5)
+ 
+        if tool.Parent == character then tool.Parent = backpack end
+        return foundBall
+    end
+ 
+    local Ball = ServerBalls:FindFirstChild("Soccer" .. player.Name) or GetBall()
+ 
+    if not Ball then return end
+ 
+    -- FÍSICA DO TEU SCRIPT
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(100, 0, 0, 100, 100)
+ 
+    if target and target ~= player then
+        local tchar = target.Character
+        if tchar and tchar:FindFirstChild("HumanoidRootPart") and tchar:FindFirstChild("Humanoid") then
+            local troot = tchar.HumanoidRootPart
+            local thum = tchar.Humanoid
+ 
+            for _, v in pairs(Ball:GetChildren()) do
+                if v:IsA("BodyVelocity") or v:IsA("BodyForce") or v:IsA("BodyAngularVelocity") then v:Destroy() end
+            end
+ 
+            local bv = Instance.new("BodyVelocity")
+            bv.Name = "FlingPower"
+            bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
+            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bv.P = 9e9
+            bv.Parent = Ball
+            
+            Ball.RotVelocity = Vector3.new(10000, 10000, 10000)
+            workspace.CurrentCamera.CameraSubject = thum
+ 
+            local connection
+            connection = game:GetService("RunService").Heartbeat:Connect(function()
+                if not Ball or not Ball.Parent or not troot or not troot.Parent or thum.Health <= 0 then
+                    connection:Disconnect()
+                    workspace.CurrentCamera.CameraSubject = humanoid
+                    return
+                end
+ 
+                if troot.Velocity.Magnitude > 0.1 then
+                    local Prediction = troot.Velocity * 0.12
+                    Ball.CFrame = CFrame.new(troot.Position + Prediction)
+                else
+                    Ball.CFrame = troot.CFrame
+                end
+                
+                Ball.RotVelocity = Vector3.new(10000, 10000, 10000)
+            end)
+ 
+            task.delay(30, function()
+                if connection then connection:Disconnect() end
+                if workspace.CurrentCamera.CameraSubject == thum then
+                    workspace.CurrentCamera.CameraSubject = humanoid
+                end
+            end)
+        end
+    end
+end
+
+-- [[ FUNÇÃO PARA CRIAR A TOOL ]]
+local function GiveFlingTool()
+    local mouse = lp:GetMouse()
+    local tool = Instance.new("Tool")
+    tool.Name = "Fling Ball Tool"
+    tool.RequiresHandle = false
+    tool.CanBeDropped = false
+    
+    tool.Activated:Connect(function()
+        local target = mouse.Target
+        if target and target.Parent then
+            -- Tenta achar o player dono da parte clicada
+            local targetPlayer = Players:GetPlayerFromCharacter(target.Parent) or Players:GetPlayerFromCharacter(target.Parent.Parent)
+            
+            if targetPlayer and targetPlayer ~= lp then
+                ExecuteFling(targetPlayer)
+            end
+        end
+    end)
+    
+    tool.Parent = lp.Backpack
+end
+
+
+MainTab:AddButton({
+    Name = "Click Fling Ball",
+    Callback = function()
+        GiveFlingTool()
     end
 })
                                     
@@ -4640,6 +4798,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
