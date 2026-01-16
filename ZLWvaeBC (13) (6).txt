@@ -1467,131 +1467,120 @@ print("Fling Boat All button created")
 
 MainTab:AddSection("Touchs")
 
-
--- [[ VARIÁVEIS DE CONTROLE ]]
-local TouchFlingActive = false
+-- [[ VARIÁVEIS DE ESTADO ]]
+local FlingTouchActive = false
 local CurrentBall = nil
 
--- [[ FUNÇÃO PARA IGNORAR COLISÃO COM VOCÊ ]]
-local function NoCollideWithMe(ball, char)
-    for _, part in pairs(char:GetChildren()) do
-        if part:IsA("BasePart") then
-            local constraint = Instance.new("NoCollisionConstraint")
-            constraint.Part0 = ball
-            constraint.Part1 = part
-            constraint.Parent = ball
-        end
-    end
-end
-
--- [[ FUNÇÃO PARA PEGAR E CONFIGURAR A BOLA ]]
-local function GetFlingBall()
+-- [[ FUNÇÃO PARA PEGAR A BOLA (BASEADA NO TEU CÓDIGO) ]]
+local function GetBallFling()
     local player = game:GetService("Players").LocalPlayer
-    local backpack = player:WaitForChild("Backpack")
     local character = player.Character
-    local workspaceCom = workspace:FindFirstChild("WorkspaceCom")
-    if not workspaceCom then return nil end
-    local ServerBalls = workspaceCom:WaitForChild("001_SoccerBalls")
-    
-    -- Auto-Obter
+    local backpack = player:WaitForChild("Backpack")
+    local ServerBalls = workspace:WaitForChild("WorkspaceCom"):WaitForChild("001_SoccerBalls")
+
     if not backpack:FindFirstChild("SoccerBall") and not character:FindFirstChild("SoccerBall") then
-        pcall(function()
-            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
-        end)
+        game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
     end
 
     local tool = backpack:FindFirstChild("SoccerBall") or character:FindFirstChild("SoccerBall")
-    
-    if tool then
-        tool.Parent = character
-        task.wait(0.1)
-        if tool:IsA("Tool") then tool:Activate() end
-        
-        local ballName = "Soccer" .. player.Name
-        local foundBall = nil
-        local timeout = tick()
+    if not tool then return nil end
 
-        repeat 
-            task.wait() 
-            foundBall = ServerBalls:FindFirstChild(ballName)
-        until foundBall or (tick() - timeout > 3)
-        
-        if tool.Parent == character then tool.Parent = backpack end
-        
-        if foundBall then
-            foundBall.CanCollide = true -- Precisa estar true para bater nos outros
-            foundBall.Massless = true
-            
-            -- Ignorar você para não te jogar longe
-            NoCollideWithMe(foundBall, character)
-            
-            -- Limpar forças
-            for _, v in pairs(foundBall:GetChildren()) do
-                if v:IsA("BodyVelocity") or v:IsA("BodyAngularVelocity") then v:Destroy() end
-            end
+    tool.Parent = character
+    task.wait(0.1)
+    if tool:IsA("Tool") then tool:Activate() end -- Auto-soltar
 
-            -- Força de Velocidade Angular (Giro da Morte)
-            local bav = Instance.new("BodyAngularVelocity")
-            bav.Name = "FlingSpin"
-            bav.AngularVelocity = Vector3.new(0, 99999, 0) -- Giro horizontal massivo
-            bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bav.P = 1e9
-            bav.Parent = foundBall
+    local ballName = "Soccer" .. player.Name
+    local foundBall = nil
+    local timeout = tick()
 
-            -- Força de Velocidade Linear
-            local bv = Instance.new("BodyVelocity")
-            bv.Name = "FlingForce"
-            bv.Velocity = Vector3.new(0, 0, 0)
-            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bv.P = 1e9
-            bv.Parent = foundBall
-            
-            return foundBall
-        end
-    end
-    return nil
+    repeat 
+        task.wait() 
+        foundBall = ServerBalls:FindFirstChild(ballName)
+    until foundBall or (tick() - timeout > 5)
+
+    if tool.Parent == character then tool.Parent = backpack end
+    return foundBall
 end
 
 -- [[ TOGGLE NA REDZ LIB ]]
 MainTab:AddToggle({
-    Name = "Touch Fling Ball",
-    Description = "Para Funcionr Chegue Perto Dos Jogadores!",
+    Name = "Fling Touch Ball",
+    Description = "Para Funcionar Chegue Perto Dos players!",
     Default = false,
     Callback = function(Value)
-        TouchFlingActive = Value
+        FlingTouchActive = Value
         local player = game:GetService("Players").LocalPlayer
+        local RunService = game:GetService("RunService")
         
         if Value then
             task.spawn(function()
-                while TouchFlingActive do
+                while FlingTouchActive do
                     local char = player.Character
                     local hrp = char and char:FindFirstChild("HumanoidRootPart")
                     
                     if hrp then
-                        CurrentBall = GetFlingBall()
+                        CurrentBall = GetBallFling()
                         
                         if CurrentBall then
+                            -- Configurações de Física Original
+                            CurrentBall.CanCollide = false
+                            CurrentBall.Massless = true
+                            CurrentBall.CustomPhysicalProperties = PhysicalProperties.new(100, 0, 0, 100, 100)
+
                             local connection
                             connection = RunService.Heartbeat:Connect(function()
-                                if not TouchFlingActive or not CurrentBall or not CurrentBall.Parent then
-                                    if connection then connection:Disconnect() end
+                                if not FlingTouchActive or not CurrentBall or not CurrentBall.Parent then
+                                    connection:Disconnect()
                                     return
                                 end
+
+                                -- Procurar alvo mais próximo (Raio de 15 studs)
+                                local target = nil
+                                local dist = 15
                                 
-                                -- Posicionamento: Um pouco a frente para garantir contato
-                                CurrentBall.CFrame = hrp.CFrame * CFrame.new(0, 0, -1)
-                                
-                                -- Física de Fling Ativa
-                                local bv = CurrentBall:FindFirstChild("FlingForce")
-                                if bv then
-                                    -- Alterna velocidade para bugar a física do alvo
-                                    bv.Velocity = Vector3.new(500, 500, 500) 
+                                for _, p in pairs(game:GetService("Players"):GetPlayers()) do
+                                    if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                                        local d = (hrp.Position - p.Character.HumanoidRootPart.Position).Magnitude
+                                        if d < dist then
+                                            target = p
+                                            dist = d
+                                        end
+                                    end
                                 end
-                                CurrentBall.RotVelocity = Vector3.new(0, 50000, 0)
+
+                                if target then
+                                    -- LÓGICA DE ATAQUE (IGUAL À TUA)
+                                    local troot = target.Character.HumanoidRootPart
+                                    
+                                    -- Garante as forças de Fling
+                                    local bv = CurrentBall:FindFirstChild("FlingPower")
+                                    if not bv then
+                                        bv = Instance.new("BodyVelocity")
+                                        bv.Name = "FlingPower"
+                                        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                                        bv.P = 9e9
+                                        bv.Parent = CurrentBall
+                                    end
+                                    
+                                    bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
+                                    CurrentBall.RotVelocity = Vector3.new(10000, 10000, 10000)
+
+                                    -- Predição de Movimento
+                                    if troot.Velocity.Magnitude > 0.1 then
+                                        CurrentBall.CFrame = CFrame.new(troot.Position + (troot.Velocity * 0.12))
+                                    else
+                                        CurrentBall.CFrame = troot.CFrame
+                                    end
+                                else
+                                    -- Se não houver ninguém perto, a bola fica em ti (escondida)
+                                    CurrentBall.CFrame = hrp.CFrame * CFrame.new(0, -10, 0)
+                                    CurrentBall.RotVelocity = Vector3.new(0, 0, 0)
+                                    local bv = CurrentBall:FindFirstChild("FlingPower")
+                                    if bv then bv.Velocity = Vector3.new(0, 0, 0) end
+                                end
                             end)
-                            
-                            -- Espera enquanto o toggle estiver ativo
-                            repeat task.wait(1) until not TouchFlingActive or not CurrentBall or not CurrentBall.Parent
+
+                            repeat task.wait(1) until not FlingTouchActive or not CurrentBall.Parent
                             if connection then connection:Disconnect() end
                         end
                     end
@@ -1599,7 +1588,7 @@ MainTab:AddToggle({
                 end
             end)
         else
-            TouchFlingActive = false
+            FlingTouchActive = false
             CurrentBall = nil
         end
     end
@@ -4655,6 +4644,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
