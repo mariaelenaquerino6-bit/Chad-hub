@@ -422,20 +422,63 @@ MainTab:AddButton({
     end
 })
 
+-- [[ VIEW PLAYER COM ATUALIZAÇÃO AUTOMÁTICA ]] --
+local viewPlayerToggle = false
+local currentViewedPlayer = nil
+
 MainTab:AddToggle({
     Name = "View Player",
     Default = false,
     Callback = function(v)
+        viewPlayerToggle = v
+        
         if v then
             local T = Players:FindFirstChild(_G.SelectedPlayer)
             if T and T.Character and T.Character:FindFirstChild("Humanoid") then
                 workspace.CurrentCamera.CameraSubject = T.Character.Humanoid
+                currentViewedPlayer = T
             end
         else
-            workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
+            if LPlayer.Character and LPlayer.Character:FindFirstChild("Humanoid") then
+                workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
+                currentViewedPlayer = nil
+            end
         end
     end
 })
+
+-- [[ ATUALIZA AUTOMATICAMENTE QUANDO O PLAYER SELECIONADO MUDAR ]] --
+local lastSelectedPlayer = _G.SelectedPlayer
+
+task.spawn(function()
+    while true do
+        if viewPlayerToggle and _G.SelectedPlayer ~= lastSelectedPlayer then
+            lastSelectedPlayer = _G.SelectedPlayer
+            
+            local T = Players:FindFirstChild(_G.SelectedPlayer)
+            if T and T.Character and T.Character:FindFirstChild("Humanoid") then
+                workspace.CurrentCamera.CameraSubject = T.Character.Humanoid
+                currentViewedPlayer = T
+            end
+        end
+        
+        -- Verifica se o player atual ainda existe e tem Humanoid
+        if viewPlayerToggle and currentViewedPlayer then
+            if not currentViewedPlayer.Parent or 
+               not currentViewedPlayer.Character or 
+               not currentViewedPlayer.Character:FindFirstChild("Humanoid") then
+                -- Se o player saiu, volta para si mesmo
+                if LPlayer.Character and LPlayer.Character:FindFirstChild("Humanoid") then
+                    workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
+                end
+                viewPlayerToggle = false
+                currentViewedPlayer = nil
+            end
+        end
+        
+        task.wait(0.5) -- Verifica a cada 0.5 segundos
+    end
+end)
 
 MainTab:AddButton({
     Name = "Bring Player",
@@ -461,6 +504,7 @@ MainTab:AddButton({
             local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
             
             if targetHum and targetHum.Health > 0 and not targetHum.Sit then
+                -- Limpa ferramentas e pega o sofá
                 pcall(function()
                     RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
                     task.wait(0.2)
@@ -475,6 +519,7 @@ MainTab:AddButton({
                 game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
                 task.wait(0.25)
                 
+                -- Configuração para girar
                 workspace.FallenPartsDestroyHeight = 0/0
                 local bodyVel = Instance.new("BodyVelocity")
                 bodyVel.Name = "SpinForce"
@@ -488,6 +533,7 @@ MainTab:AddButton({
                 local rotation = 0
                 local startTime = tick()
                 
+                -- Loop girando
                 while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 and not targetHum.Sit do
                     if tick() - startTime > 10 then break end
                     RunService.Heartbeat:Wait()
@@ -500,15 +546,11 @@ MainTab:AddButton({
                     playerHRP.RotVelocity = Vector3.new(50000, 50000, 50000)
                     
                     if targetHum.Sit then
-                        Window:Notify({
-                            Title = "Sucesso",
-                            Content = targetPlayer.Name .. " sentou no sofá!",
-                            Duration = 3
-                        })
                         break
                     end
                 end
                 
+                -- Volta para posição original
                 bodyVel:Destroy()
                 playerHRP.Anchored = true
                 playerHRP.CFrame = originalPos
@@ -517,40 +559,30 @@ MainTab:AddButton({
                 playerHRP.RotVelocity = Vector3.zero
                 playerHRP.Anchored = false
                 
+                -- Deleta o sofá
                 playerHumanoid:UnequipTools()
                 pcall(function() 
                     RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") 
                 end)
                 
+                -- Volta a câmera para você
                 workspace.CurrentCamera.CameraSubject = playerHumanoid
                 
-                task.wait(0.5)
+                -- Notificação FINAL APENAS
                 if targetHum and targetHum.Sit then
                     Window:Notify({
-                        Title = "Finalizado",
-                        Content = targetPlayer.Name .. " está sentado no sofá!",
-                        Duration = 5
-                    })
-                end
-            else
-                if targetHum and targetHum.Sit then
-                    Window:Notify({
-                        Title = "Aviso",
-                        Content = targetPlayer.Name .. " já está sentado!",
+                        Title = "Player Sentou",
+                        Content = _G.SelectedPlayer .. " sentou no sofá!",
                         Duration = 3
                     })
                 end
             end
-        else
-            Window:Notify({
-                Title = "Erro",
-                Content = "Selecione um jogador primeiro!",
-                Duration = 3
-            })
         end
         
         _G.IsTrapping = false
-        playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+        if playerHumanoid then
+            playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+        end
     end
 })
 
@@ -4590,6 +4622,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
