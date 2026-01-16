@@ -2517,6 +2517,7 @@ HouseTab:AddToggle({
         end
     end
 })
+
 audios = {
     {Name = "Yamete Kudasai", ID = 108494476595033},
     {Name = "Gritinho", ID = 5710016194},
@@ -2558,9 +2559,23 @@ audios = {
     {Name = "Sai dai Lava Prato", ID = 101232400175829},
     {Name = "Seloko num compensa", ID = 78442476709262},
 }
- 
+
 local selectedAudioID
- 
+local ouvirMeuAudio = false
+
+-- Adicionar toggle para controlar se você ouve o áudio
+AudioTab:AddToggle({
+    Name = "Ouvir meu áudio também",
+    Description = "Quando ativado, você também ouvirá os áudios tocados",
+    Default = false,
+    Flag = "ouvir_meu_audio",
+    Callback = function(value)
+        ouvirMeuAudio = value
+    end
+})
+
+AudioTab:AddParagraph("Configuração de Áudio", "Ative a opção acima se quiser ouvir os áudios que tocar para outros jogadores")
+
 -- Adicionar uma textbox para inserir o ID do áudio
 AudioTab:AddTextBox({
     Name = "Insira o ID do Áudio ou Musica",
@@ -2570,13 +2585,13 @@ AudioTab:AddTextBox({
         selectedAudioID = tonumber(value)
     end
 })
- 
+
 -- Adicionar uma dropdown para selecionar o áudio
 local audioNames = {}
 for _, audio in ipairs(audios) do
     table.insert(audioNames, audio.Name)
 end
- 
+
 AudioTab:AddDropdown({
     Name = "Selecione o Áudio",
     Description = "Escolha um áudio da lista",
@@ -2592,21 +2607,95 @@ AudioTab:AddDropdown({
         end
     end
 })
+
+-- Função para tocar áudio para você mesmo
+local function playAudioForMe()
+    if selectedAudioID then
+        -- Usar o remote 1Gu1nSound1s para tocar para você mesmo
+        local args = {
+            [1] = game:GetService("Workspace"),
+            [2] = selectedAudioID,
+            [3] = 1,
+        }
+        
+        pcall(function()
+            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Gu1nSound1s"):FireServer(unpack(args))
+        end)
+        
+        -- Criar e tocar o áudio localmente também
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://" .. selectedAudioID
+        sound.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+        sound:Play()
+        
+        -- Remover o som após tocar (opcional, para não acumular)
+        game:GetService("Debris"):AddItem(sound, 10)
+    else
+        warn("Nenhum áudio selecionado!")
+    end
+end
+
+-- Função para tocar áudio para outros jogadores
+local function playAudioForOthers()
+    if selectedAudioID then
+        local idStr = tostring(selectedAudioID)
+        local players = game:GetService("Players"):GetPlayers()
+        local localPlayer = game:GetService("Players").LocalPlayer
+        
+        -- Percorre todos os players do servidor (exceto você)
+        for _, p in pairs(players) do
+            if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = p.Character.HumanoidRootPart
+                
+                local args = {
+                    [1] = hrp,
+                    [2] = hrp,
+                    [3] = Vector3.new(0, -1, 0),
+                    [4] = Vector3.new(0, 0, 0),
+                    [5] = hrp,
+                    [6] = hrp,
+                    [7] = idStr,
+                    [8] = idStr,
+                    [9] = { [1] = true },
+                    [10] = {
+                        [1] = 25,
+                        [2] = Vector3.new(0.25, 0.25, 100),
+                        [3] = BrickColor.new("Bright yellow"),
+                        [4] = 0.25,
+                        [5] = Enum.Material.SmoothPlastic,
+                        [6] = 0.25
+                    },
+                    [11] = true,
+                    [12] = false
+                }
+                
+                pcall(function()
+                    game:GetService("ReplicatedStorage"):WaitForChild("RE", 9e9):WaitForChild("1Gu1n", 9e9):FireServer(unpack(args))
+                end)
+            end
+        end
+    else
+        warn("Nenhum áudio selecionado!")
+    end
+end
+
 -- Controle do loop
 local audioLoop = false
- 
+
 -- Nova seção para loop de áudio
 AudioTab:AddSection("Loop de Audio")
- 
--- Função para tocar o áudio repetidamente para TODOS os players
+
+-- Função para loop de áudio (para outros jogadores E para você se a toggle estiver ativada)
 local function playLoopedAudio()
     while audioLoop do
         if selectedAudioID then
             local idStr = tostring(selectedAudioID)
+            local players = game:GetService("Players"):GetPlayers()
+            local localPlayer = game:GetService("Players").LocalPlayer
             
-            -- Loop para aplicar o remote em cada player do servidor
-            for _, p in pairs(game:GetService("Players"):GetPlayers()) do
-                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            -- Loop para aplicar o remote em cada player (exceto você)
+            for _, p in pairs(players) do
+                if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = p.Character.HumanoidRootPart
                     
                     local args = {
@@ -2631,24 +2720,28 @@ local function playLoopedAudio()
                         [12] = false
                     }
                     
-                    -- Dispara o remote para o player atual do loop
                     pcall(function()
                         game:GetService("ReplicatedStorage"):WaitForChild("RE", 9e9):WaitForChild("1Gu1n", 9e9):FireServer(unpack(args))
                     end)
                 end
             end
+            
+            -- SE A TOGGLE ESTIVER ATIVADA, TOCA PARA VOCÊ TAMBÉM NO LOOP
+            if ouvirMeuAudio then
+                playAudioForMe()
+            end
         else
             warn("Nenhum áudio selecionado!")
         end
- 
+
         task.wait(0.5) -- Delay para evitar lag/kick por excesso de remote
     end
 end
- 
+
 -- Toggle para loop de áudio
 AudioTab:AddToggle({
     Name = "Loop Tocar Áudio",
-    Description = "Ativa o loop do áudio para todos no server",
+    Description = "Ativa o loop do áudio",
     Default = false,
     Flag = "audio_loop",
     Callback = function(value)
@@ -2659,83 +2752,45 @@ AudioTab:AddToggle({
     end
 })
 
--- Adicionar um parágrafo como label
-AudioTab:AddParagraph("Info", "Loop de tocar Áudio (Todos players do Server ouvem)")
- 
--- Função para tocar o áudio normal (AFETA TODOS OS PLAYERS)
-local function playAudio()
-    if selectedAudioID then
-        local idStr = tostring(selectedAudioID)
-        
-        -- Percorre todos os players do servidor
-        for _, p in pairs(game:GetService("Players"):GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = p.Character.HumanoidRootPart
-                
-                -- Argumentos conforme solicitado para o remote 1Gu1n
-                local args = {
-                    [1] = hrp,
-                    [2] = hrp,
-                    [3] = Vector3.new(0, -1, 0),
-                    [4] = Vector3.new(0, 0, 0),
-                    [5] = hrp,
-                    [6] = hrp,
-                    [7] = idStr,
-                    [8] = idStr,
-                    [9] = { [1] = true },
-                    [10] = {
-                        [1] = 25,
-                        [2] = Vector3.new(0.25, 0.25, 100),
-                        [3] = BrickColor.new("Bright yellow"),
-                        [4] = 0.25,
-                        [5] = Enum.Material.SmoothPlastic,
-                        [6] = 0.25
-                    },
-                    [11] = true,
-                    [12] = false
-                }
-                
-                -- Executa o remote para o player atual
-                pcall(function()
-                    game:GetService("ReplicatedStorage"):WaitForChild("RE", 9e9):WaitForChild("1Gu1n", 9e9):FireServer(unpack(args))
-                end)
-            end
-        end
-    else
-        warn("Nenhum áudio selecionado!")
-    end
-end
- 
+AudioTab:AddParagraph("Info", "Loop de tocar Áudio")
+
 -- Nova seção para tocar áudio
 AudioTab:AddSection("Tocar Áudio")
- 
+
 -- Botão para tocar o áudio
 AudioTab:AddButton({
     Name = "Tocar Áudio",
     Callback = function()
-        playAudio()
+        -- Tocar para outros jogadores
+        playAudioForOthers()
+        
+        -- Se a toggle estiver ativada, tocar para você também
+        if ouvirMeuAudio then
+            playAudioForMe()
+        end
     end
 })
 
 -- Toggle para "Estorar ouvido de geral" usando o REMOTE 1Gu1n
 AudioTab:AddToggle({
     Name = "Estorar ouvido de geral KK",
-    Description = "Toca áudio repetidamente para todos (Remote 1Gu1n)",
+    Description = "Toca áudio repetidamente para todos (exceto você, a menos que a toggle esteja ativada)",
     Default = false,
     Flag = "audio_spam",
     Callback = function(value)
         getgenv().Audio_All_loop_fast = value
- 
+
         task.spawn(function()
             while getgenv().Audio_All_loop_fast do
                 local useID = tostring(selectedAudioID or "6314880174")
+                local players = game:GetService("Players"):GetPlayers()
+                local localPlayer = game.Players.LocalPlayer
                 
-                -- Loop em todos os jogadores para pegar o HumanoidRootPart de cada um
-                for _, targetPlayer in pairs(game:GetService("Players"):GetPlayers()) do
-                    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                -- Loop em todos os jogadores (exceto você)
+                for _, targetPlayer in pairs(players) do
+                    if targetPlayer ~= localPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
                         local hrp = targetPlayer.Character.HumanoidRootPart
                         
-                        -- OS ARGUMENTOS EXATOS QUE VOCE PEDIU, ADAPTADOS PARA O PLAYER DO LOOP
                         local args = {
                             [1] = hrp,
                             [2] = hrp,
@@ -2760,11 +2815,15 @@ AudioTab:AddToggle({
                             [12] = false;
                         }
 
-                        -- Dispara o remote RE > 1Gu1n
                         pcall(function()
                             game:GetService("ReplicatedStorage"):WaitForChild("RE"):WaitForChild("1Gu1n"):FireServer(unpack(args))
                         end)
                     end
+                end
+                
+                -- SE A TOGGLE ESTIVER ATIVADA, TOCA PARA VOCÊ TAMBÉM NO LOOP DO SPAM
+                if ouvirMeuAudio then
+                    playAudioForMe()
                 end
                 
                 -- Pequeno delay para nao crashar por excesso de remotes
@@ -2773,8 +2832,6 @@ AudioTab:AddToggle({
         end)
     end
 })
-
-AudioTab:AddParagraph("Info", "Apenas Os Outros Players Do server Ouvem o Áudio, em caso de novos players desative e ative denovo")
 
 FunTab:AddSection("Diversão & Sus")
 
@@ -4386,6 +4443,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
