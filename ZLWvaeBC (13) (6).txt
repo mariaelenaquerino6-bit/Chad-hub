@@ -441,6 +441,124 @@ MainTab:AddToggle({
 })
 
 
+MainTab:AddButton({
+    Name = "Bring Player",
+    Callback = function()
+        if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
+            Window:Notify({
+                Title = "Erro", 
+                Content = "Selecione um jogador primeiro!",
+                Duration = 3
+            })
+            return
+        end
+        
+        local target = game.Players:FindFirstChild(_G.SelectedPlayer)
+        if not target or not target.Character then
+            Window:Notify({
+                Title = "Erro",
+                Content = "Jogador não encontrado!",
+                Duration = 3
+            })
+            return
+        end
+        
+        local LocalPlayer = game.Players.LocalPlayer
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        
+        if not hrp or not humanoid then return end
+        
+        -- Salvar posição original
+        local originalPos = hrp.CFrame
+        
+        -- Limpar ferramentas anteriores
+        local args = {"ClearAllTools"}
+        game:GetService("ReplicatedStorage"):WaitForChild("RE"):WaitForChild("1Clea1rTool1s"):FireServer(unpack(args))
+        task.wait(0.2)
+        
+        -- Pegar sofá
+        local args2 = {"PickingTools", "Couch"}
+        game:GetService("ReplicatedStorage"):WaitForChild("RE"):WaitForChild("1Too1l"):InvokeServer(unpack(args2))
+        task.wait(0.3)
+        
+        -- Equipar sofá
+        local couch = LocalPlayer.Backpack:FindFirstChild("Couch")
+        if couch then
+            couch.Parent = char
+            task.wait(0.2)
+            game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+            task.wait(0.25)
+        end
+        
+        -- Configurar física para voo
+        workspace.FallenPartsDestroyHeight = 0/0
+        local bv = Instance.new("BodyVelocity")
+        bv.Name = "FlingForce"
+        bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
+        bv.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+        bv.Parent = hrp
+        
+        local ba = Instance.new("BodyAngularVelocity")
+        ba.Name = "SpinForce"
+        ba.AngularVelocity = Vector3.new(0, 50, 0)
+        ba.MaxTorque = Vector3.new(1/0, 1/0, 1/0)
+        ba.Parent = hrp
+        
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+        
+        -- Loop de rotação até o alvo sentar
+        local angle = 0
+        local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+        local targetHum = target.Character:FindFirstChildOfClass("Humanoid")
+        
+        if not targetHRP or not targetHum then return end
+        
+        local connection = game:GetService("RunService").Heartbeat:Connect(function()
+            if targetHum.Sit then
+                connection:Disconnect()
+                return
+            end
+            
+            angle = angle + 0.1
+            local offset = Vector3.new(math.cos(angle) * 3, 1.5, math.sin(angle) * 3)
+            hrp.CFrame = CFrame.new(targetHRP.Position + offset) * CFrame.Angles(0, angle, 0)
+        end)
+        
+        -- Esperar o alvo sentar
+        local timeout = tick() + 30 -- 30 segundos máximo
+        repeat
+            task.wait(0.5)
+        until targetHum.Sit or tick() > timeout or not target.Parent
+        
+        -- Desconectar e limpar
+        connection:Disconnect()
+        bv:Destroy()
+        ba:Destroy()
+        
+        -- Teleportar para posição original
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+        hrp.Anchored = true
+        hrp.CFrame = originalPos
+        task.wait(0.2)
+        hrp.Velocity = Vector3.zero
+        hrp.RotVelocity = Vector3.zero
+        hrp.Anchored = false
+        
+        -- Limpar ferramentas
+        humanoid:UnequipTools()
+        local args3 = {"ClearAllTools"}
+        game:GetService("ReplicatedStorage"):WaitForChild("RE"):WaitForChild("1Clea1rTool1s"):FireServer(unpack(args3))
+        
+        Window:Notify({
+            Title = "Bring Player",
+            Content = target.Name .. " foi trazido com sucesso!",
+            Duration = 3
+        })
+    end
+})
+
 MainTab:AddSection("Métodos")
 
 MainTab:AddDropdown({
@@ -4476,6 +4594,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
