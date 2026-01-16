@@ -1605,7 +1605,10 @@ for n, _ in pairs(tornados) do table.insert(nomes, n) end
 
 local ShipSystem = {
     tornadoActive = false,
-    currentShip = nil
+    currentShip = nil,
+    connection = nil,
+    altura = 0,
+    angulo = 0
 }
 
 local function spawnPirateShip()
@@ -1635,17 +1638,23 @@ local function startTornado()
     
     repeat
         task.wait(0.1)
-        hrp.CFrame = seat.CFrame * CFrame.new(0, 1, 0)
+        if hrp then
+            hrp.CFrame = seat.CFrame * CFrame.new(0, 1, 0)
+        end
     until hum.SeatPart == seat
     
-    -- REMOVIDO playShipAudio
-    
     task.delay(4, function()
-        if hum.SeatPart then hum.Sit = false end
-        hrp.CFrame = CFrame.new(0, 0, 0)
+        if hum.SeatPart then 
+            hum.Sit = false 
+        end
+        if hrp then
+            hrp.CFrame = CFrame.new(0, 0, 0)
+        end
     end)
     
     ShipSystem.tornadoActive = true
+    ShipSystem.altura = 0
+    ShipSystem.angulo = 0
     
     task.spawn(function()
         local re = ReplicatedStorage:WaitForChild("RE"):WaitForChild("1Player1sCa1r")
@@ -1655,26 +1664,46 @@ local function startTornado()
         end
     end)
     
-    local rotationSpeed = math.rad(720)
-    local currentRotation = 0
+    local tempoInicio = tick()
+    local raio = 5 -- Raio do círculo
+    local velocidadeRotacao = 5 -- Velocidade da rotação
+    local velocidadeSubida = 3 -- Velocidade de subida/descida
+    local alturaMaxima = 50 -- Altura máxima
     
-    local connection
-    connection = RunService.Heartbeat:Connect(function(dt)
+    ShipSystem.connection = RunService.Heartbeat:Connect(function(dt)
         if not ShipSystem.tornadoActive or not ShipSystem.currentShip or not ShipSystem.currentShip.PrimaryPart then
-            connection:Disconnect()
+            if ShipSystem.connection then
+                ShipSystem.connection:Disconnect()
+                ShipSystem.connection = nil
+            end
             return
         end
         
-        currentRotation = currentRotation + rotationSpeed * dt
+        -- Atualizar ângulo e altura
+        ShipSystem.angulo = ShipSystem.angulo + dt * velocidadeRotacao
+        ShipSystem.altura = math.sin(tick() * velocidadeSubida) * alturaMaxima
         
-        -- USANDO A LÓGICA DE ALTURA DO SEU SCRIPT ORIGINAL (0 NO VETOR)
-        local cframe = CFrame.new(localSelecionado) * CFrame.Angles(0, currentRotation, 0)
+        -- Calcular posição no círculo
+        local x = localSelecionado.X + math.cos(ShipSystem.angulo) * raio
+        local z = localSelecionado.Z + math.sin(ShipSystem.angulo) * raio
+        local y = localSelecionado.Y + ShipSystem.altura
+        
+        -- Criar CFrame com rotação
+        local cframe = CFrame.new(x, y, z) * CFrame.Angles(0, ShipSystem.angulo, 0)
+        
+        -- Aplicar movimento oscilatório adicional (efeito de balanço)
+        cframe = cframe * CFrame.Angles(math.rad(math.sin(tick() * 2) * 10), 0, math.rad(math.cos(tick() * 2) * 5))
+        
         ShipSystem.currentShip:SetPrimaryPartCFrame(cframe)
     end)
 end
 
 local function stopTornado()
     ShipSystem.tornadoActive = false
+    if ShipSystem.connection then
+        ShipSystem.connection:Disconnect()
+        ShipSystem.connection = nil
+    end
     task.spawn(function()
         ReplicatedStorage:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles")
     end)
@@ -1685,7 +1714,14 @@ MainTab:AddDropdown({
     Name = "Escolher Local",
     Options = nomes,
     Default = "Ao Ponto Inicial",
-    Callback = function(Value) localSelecionado = tornados[Value] end
+    Callback = function(Value) 
+        localSelecionado = tornados[Value] 
+        if ShipSystem.tornadoActive and ShipSystem.currentShip then
+            -- Atualizar posição em tempo real
+            ShipSystem.altura = 0
+            ShipSystem.angulo = 0
+        end
+    end
 })
 
 MainTab:AddToggle({
@@ -4622,6 +4658,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
