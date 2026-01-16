@@ -1465,6 +1465,121 @@ MainTab:AddButton({
 })
 print("Fling Boat All button created")
 
+MainTab:AddSection("Touchs")
+
+-- [[ VARIÁVEIS DE ESTADO ]]
+local TouchFlingActive = false
+local CurrentBall = nil
+
+-- [[ FUNÇÃO PARA OBTER E ATIVAR A BOLA AUTOMATICAMENTE ]]
+local function GetAndActivateBall()
+    local player = game:GetService("Players").LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local character = player.Character
+    local workspaceCom = workspace:FindFirstChild("WorkspaceCom")
+    if not workspaceCom then return nil end
+    local ServerBalls = workspaceCom:WaitForChild("001_SoccerBalls")
+    
+    -- 1. Tenta pegar a ferramenta via Remote
+    if not backpack:FindFirstChild("SoccerBall") and not character:FindFirstChild("SoccerBall") then
+        pcall(function()
+            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+        end)
+    end
+
+    local tool = backpack:FindFirstChild("SoccerBall") or character:FindFirstChild("SoccerBall")
+    
+    if tool then
+        -- 2. Equipar a bola
+        tool.Parent = character
+        task.wait(0.1)
+        
+        -- 3. AUTO-CLICK: Simula o toque na tela para soltar a bola
+        if tool:IsA("Tool") then
+            tool:Activate()
+        end
+        
+        local ballName = "Soccer" .. player.Name
+        local foundBall = nil
+        local timeout = tick()
+
+        -- 4. Espera a bola física aparecer no Workspace
+        repeat 
+            task.wait() 
+            foundBall = ServerBalls:FindFirstChild(ballName)
+        until foundBall or (tick() - timeout > 3)
+        
+        -- Guarda a ferramenta de volta se necessário
+        if tool.Parent == character then tool.Parent = backpack end
+        
+        return foundBall
+    end
+    return nil
+end
+
+-- [[ TOGGLE NA WAND UI ]]
+MainTab:AddToggle({
+    Name = "Touch Fling Ball",
+    Description = "Para Funcionar Chegue Perto Dos players!",
+    Default = false,
+    Callback = function(Value)
+        TouchFlingActive = Value
+        local player = game:GetService("Players").LocalPlayer
+        
+        if Value then
+            task.spawn(function()
+                while TouchFlingActive do
+                    local char = player.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    
+                    if hrp then
+                        -- Obtém a bola e já a "chuta" automaticamente
+                        CurrentBall = GetAndActivateBall()
+                        
+                        if CurrentBall then
+                            -- Configurações de física agressiva para o Fling
+                            CurrentBall.CanCollide = false
+                            CurrentBall.Massless = true
+                            
+                            -- Conexão de Toque para Fling
+                            local touchConn
+                            touchConn = CurrentBall.Touched:Connect(function(hit)
+                                if not TouchFlingActive then touchConn:Disconnect() return end
+                                
+                                local targetChar = hit.Parent
+                                local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
+                                local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+                                
+                                if targetHum and targetRoot and targetChar ~= char then
+                                    -- Aplicação de força de impacto brutal
+                                    CurrentBall.Velocity = Vector3.new(9e8, 9e8, 9e8)
+                                    CurrentBall.RotVelocity = Vector3.new(15000, 15000, 15000)
+                                end
+                            end)
+
+                            -- Loop de posicionamento (Mantém a bola colada a ti)
+                            while TouchFlingActive and CurrentBall and CurrentBall.Parent do
+                                if char and hrp then
+                                    CurrentBall.CFrame = hrp.CFrame
+                                    -- Mantém a física instável para o glitch de Fling
+                                    CurrentBall.Velocity = Vector3.new(9e7, 9e7, 9e7)
+                                    CurrentBall.RotVelocity = Vector3.new(15000, 15000, 15000)
+                                end
+                                task.wait()
+                            end
+                            if touchConn then touchConn:Disconnect() end
+                        end
+                    end
+                    task.wait(0.5) -- Delay de segurança para evitar crash
+                end
+            end)
+        else
+            TouchFlingActive = false
+            CurrentBall = nil
+        end
+    end
+})
+
 ProtTab:AddToggle({
     Name = "Anti-Sit",
     Default = false,
@@ -4515,6 +4630,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
