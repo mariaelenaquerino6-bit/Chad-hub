@@ -4414,6 +4414,78 @@ game:GetService("RunService").RenderStepped:Connect(function(dt)
 end)
 
 
+-- [[ VARIÁVEIS DE ESTADO ]]
+local Settings = {
+    NotifyJoinLeave = false,
+    NotifyDeaths = false
+}
+
+-- Toggle para Entrada/Saída
+DiscordTab:AddToggle({
+    Name = "Notificar Entradas/Saídas",
+    Description = "Avisa quando jogadores entram ou saem do servidor.",
+    Default = false,
+    Callback = function(Value)
+        Settings.NotifyJoinLeave = Value
+    end
+})
+
+-- Toggle para Mortes
+DiscordTab:AddToggle({
+    Name = "Notificar Mortes",
+    Description = "Avisa quando um jogador morre ou dá reset.",
+    Default = false,
+    Callback = function(Value)
+        Settings.NotifyDeaths = Value
+    end
+})
+
+-- [[ LÓGICA DE MONITORIZAÇÃO ]]
+
+-- Função para monitorizar a morte de um jogador específico
+local function WatchDeath(Player)
+    Player.CharacterAppearanceLoaded:Connect(function(Character)
+        local Humanoid = Character:WaitForChild("Humanoid")
+        Humanoid.Died:Connect(function()
+            if Settings.NotifyDeaths then
+                Window:Notify({
+                    Title = "💀 Jogador Morreu",
+                    Content = Player.DisplayName .. " (@" .. Player.Name .. ") foi eliminado!",
+                    Duration = 5
+                })
+            end
+        end)
+    end)
+end
+
+-- Evento de Entrada
+Players.PlayerAdded:Connect(function(Player)
+    if Settings.NotifyJoinLeave then
+        Window:Notify({
+            Title = "✅ Jogador Entrou",
+            Content = Player.DisplayName .. " entrou no servidor.",
+            Duration = 5
+        })
+    end
+    WatchDeath(Player)
+end)
+
+-- Evento de Saída
+Players.PlayerRemoving:Connect(function(Player)
+    if Settings.NotifyJoinLeave then
+        Window:Notify({
+            Title = "❌ Jogador Saiu",
+            Content = Player.DisplayName .. " saiu do servidor.",
+            Duration = 5
+        })
+    end
+end)
+
+-- Inicializar monitorização para quem já está no servidor
+for _, p in pairs(Players:GetPlayers()) do
+    WatchDeath(p)
+end
+
 DiscordTab:AddDiscordInvite({
 	Title = "redz black Comunity",
 	Description = "Red Black hub",
@@ -4443,6 +4515,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
