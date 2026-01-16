@@ -2597,81 +2597,96 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Variáveis de Estado
-local SelectedMethod = "Telefone"
-local LagActive = false
 
--- Função Principal de Lag
-local function runLagLoop()
-    task.spawn(function()
-        while LagActive do
-            pcall(function()
-                local char = lp.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                if not hrp then return end
+-- Configurações Técnicas
+local lagConfig = {
+    ["Laptop"] = { pos = Vector3.new(-117.5, 32.4, 29.45), path = {"WorkspaceCom", "001_GiveTools", "Laptop"} },
+    ["Extintor"] = { pos = Vector3.new(-471.24, 3.8, -152.46), path = {"WorkspaceCom", "001_GiveTools", "FireX"} },
+    ["Bomba"] = { pos = Vector3.new(-141.42, -29.97, 243.2), path = {"WorkspaceCom", "001_CriminalWeapons", "GiveTools", "Bomb"} },
+    ["Maca"] = { pos = Vector3.new(-340.68, 3.04, 28.59), path = {"WorkspaceCom", "001_GiveTools", "Stretcher"} }
+}
 
-                if SelectedMethod == "Telefone" then
-                    local phone = Workspace:FindFirstChild("WorkspaceCom"):FindFirstChild("001_CommercialStores"):FindFirstChild("CommercialStorage1"):FindFirstChild("Store"):FindFirstChild("Tools"):FindFirstChild("Iphone")
-                    if phone then
-                        hrp.CFrame = phone.CFrame
-                        if phone:FindFirstChild("ClickDetector") then fireclickdetector(phone.ClickDetector) end
-                    end
-                elseif SelectedMethod == "Bomba" then
-                    local bomb = Workspace:FindFirstChild("WorkspaceCom"):FindFirstChild("001_CriminalWeapons"):FindFirstChild("GiveTools"):FindFirstChild("Bomb")
-                    if bomb then
-                        hrp.CFrame = bomb.CFrame
-                        if bomb:FindFirstChild("ClickDetector") then fireclickdetector(bomb.ClickDetector) end
-                        ReplicatedStorage:WaitForChild("RE"):WaitForChild("1Blo1wBomb1sServe1r"):FireServer("Bomb"..lp.Name)
-                    end
-                elseif SelectedMethod == "Extintor" then
-                    local giveTools = Workspace:FindFirstChild("WorkspaceCom"):FindFirstChild("001_GiveTools")
-                    local ext = giveTools and giveTools:FindFirstChild("FireX")
-                    if ext then
-                        hrp.CFrame = ext.CFrame
-                        if ext:FindFirstChild("ClickDetector") then fireclickdetector(ext.ClickDetector) end
-                    end
-                end
-            end)
-            task.wait(0.01) -- Velocidade máxima de spam
-        end
-    end)
+local itensSelecionados = {}
+local lagAtivo = false
+local lagConnection = nil
+
+-- Função Otimizada para Achar o Item
+local function GetItemPart(itemKey)
+    local config = lagConfig[itemKey]
+    if not config then return nil end
+
+    local current = Workspace
+    for _, name in ipairs(config.path) do
+        current = current:FindFirstChild(name)
+        if not current then return nil end
+    end
+    
+    local click = current:FindFirstChild("ClickDetector")
+    return click and {Part = current, Click = click} or nil
 end
 
--- Interface
-LagTab:AddSection("Configuração de Ataque")
-
+-- Dropdown Multi-Select
 LagTab:AddDropdown({
-    Name = "Método de Lag",
-    Description = "Escolha o item que será usado para o lag",
-    Options = {"Telefone", "Bomba", "Extintor"},
-    Default = "Telefone",
-    Callback = function(Value)
-        SelectedMethod = Value
-    end
+  Name = "Escolher Método De Lag",
+  Description = "Selecione múltiplos itens para o Lag ",
+  Options = {"Laptop", "Extintor", "Bomba", "Maca"},
+  Default = {},
+  Callback = function(Value)
+      itensSelecionados = Value
+  end
 })
 
+-- Toggle de Execução (Botão de Ligar)
 LagTab:AddToggle({
-    Name = "Executar Lag",
-    Description = "Ativa ou desativa o loop de lag selecionado",
-    Default = false,
-    Callback = function(Value)
-        LagActive = Value
-        if Value then
-            runLagLoop()
-            Window:Notify({
-                Title = "Lag Iniciado",
-                Content = "Executando lag via: " .. SelectedMethod,
-                Duration = 4
-            })
-        else
-            Library:Notify({
-                Title = "Lag Parado",
-                Content = "O loop de execução foi encerrado.",
-                Duration = 3
-            })
-        end
-    end
+  Name = "Executar Lag Server",
+  Description = "Inicia o Lag Server",
+  Default = false,
+  Callback = function(Value)
+      lagAtivo = Value
+      
+      if lagAtivo then
+          if not itensSelecionados or #itensSelecionados == 0 then
+              Window:Notify({
+                  Title = "Erro",
+                  Content = "Selecione o iten no Dropdown!",
+                  Duration = 3
+              })
+              return
+          end
+
+          lagConnection = RunService.Heartbeat:Connect(function()
+              local char = LocalPlayer.Character
+              local hrp = char and char:FindFirstChild("HumanoidRootPart")
+              
+              if hrp and lagAtivo then
+                  for _, itemName in ipairs(itensSelecionados) do
+                      local itemData = GetItemPart(itemName)
+                      if itemData then
+                          -- Teleporte instantâneo
+                          hrp.CFrame = CFrame.new(lagConfig[itemName].pos)
+                          
+                          -- Spam de Clique
+                          pcall(function()
+                              fireclickdetector(itemData.Click)
+                          end)
+                      end
+                  end
+              end
+              -- VELOCIDADE MÁXIMA (CUIDADO)
+              task.wait() -- Sem argumentos = o mais rápido possível (aprox 0.03s)
+          end)
+          
+          Window:Notify({Title = "Sucesso", Content = "Spam iniciado na velocidade máxima!", Duration = 3})
+      else
+          if lagConnection then
+              lagConnection:Disconnect()
+              lagConnection = nil
+          end
+          Window:Notify({Title = "Status", Content = "Spam parado.", Duration = 3})
+      end
+  end
 })
+
 
 local SelectHouse = nil
 local NoclipDoor = nil
@@ -4846,6 +4861,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
