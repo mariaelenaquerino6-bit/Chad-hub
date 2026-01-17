@@ -64,6 +64,7 @@ local TeleportTab = Window:MakeTab({ Title = "Teleports", Icon = "Map" })
 local AvatarTab = Window:MakeTab({ Title = "Avatar", Icon = "Shirt" })
 local VeloTab = Window:MakeTab({ Title = "Carros", Icon = "Car" })
 local HouseTab = Window:MakeTab({ Title = "House", Icon = "Home" })
+local LagTab = Window:MakeTab({ Title = "Lag Server", Icon = "Skull" })
 local AudioTab = Window:MakeTab({ Title = "Áudio All", Icon = "music" })
 local FunTab = Window:MakeTab({ Title = "Fun", Icon = "baby" })
 local RGBTab = Window:MakeTab({ Title= "RGB", Icon = "palette" })
@@ -2827,6 +2828,144 @@ HouseTab:AddToggle({
     end
 })
 
+
+-- [[ VARIÁVEIS DE CONTROLE ]]
+local selectedLag = "Laptop"
+local lagActive = false
+local lagConnection = nil
+
+-- [[ CONFIGURAÇÕES DE LAG ]]
+local lagOptions = {
+    Laptop = {
+        position = Vector3.new(-117.5, 32.4, 29.45),
+        getPart = function()
+            local workspaceCom = Workspace:FindFirstChild("WorkspaceCom")
+            local giveTools = workspaceCom and workspaceCom:FindFirstChild("001_GiveTools")
+            local item = giveTools and giveTools:FindFirstChild("Laptop")
+            return (item and item:FindFirstChild("ClickDetector")) and item or nil
+        end
+    },
+    Extintor = {
+        -- LÓGICA ESPECIAL DAYCARE
+        position = Vector3.new(430, -108, 100),
+        getPart = function()
+            local dayCare = Workspace:FindFirstChild("WorkspaceCom") and Workspace.WorkspaceCom:FindFirstChild("001_DayCare")
+            local tools = dayCare and dayCare:FindFirstChild("Tools")
+            local item = tools and tools:FindFirstChild("FireX")
+            return (item and item:FindFirstChild("ClickDetector")) and item or nil
+        end
+    },
+    Bomba = {
+        position = Vector3.new(-141.42, -29.97, 243.2),
+        getPart = function()
+            local workspaceCom = Workspace:FindFirstChild("WorkspaceCom")
+            local criminal = workspaceCom and workspaceCom:FindFirstChild("001_CriminalWeapons")
+            local giveTools = criminal and criminal:FindFirstChild("GiveTools")
+            local item = giveTools and giveTools:FindFirstChild("Bomb")
+            return (item and item:FindFirstChild("ClickDetector")) and item or nil
+        end
+    },
+    Maca = {
+        position = Vector3.new(-340.68, 3.04, 28.59),
+        getPart = function()
+            local workspaceCom = Workspace:FindFirstChild("WorkspaceCom")
+            local giveTools = workspaceCom and workspaceCom:FindFirstChild("001_GiveTools")
+            local item = giveTools and giveTools:FindFirstChild("Stretcher")
+            return (item and item:FindFirstChild("ClickDetector")) and item or nil
+        end
+    }
+}
+
+-- [[ LÓGICA DE EXECUÇÃO ]]
+local function startLag()
+    local lagOption = lagOptions[selectedLag]
+    if not lagOption then return end
+
+    lagActive = true
+    lagConnection = RunService.Heartbeat:Connect(function()
+        if not lagActive then return end
+        
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if hrp then
+            -- Teleporte para o local do item
+            hrp.CFrame = CFrame.new(lagOption.position)
+            
+            -- Tenta clicar no item
+            local part = lagOption.getPart()
+            if part and part:FindFirstChild("ClickDetector") then
+                pcall(function()
+                    fireclickdetector(part.ClickDetector)
+                end)
+            end
+
+            -- Lógica adicional para contar ferramentas se for Extintor
+            if selectedLag == "Extintor" then
+                local toolsCount = 0
+                for _, container in ipairs({LocalPlayer.Backpack, char}) do
+                    for _, tool in ipairs(container:GetChildren()) do
+                        if tool:IsA("Tool") then toolsCount = toolsCount + 1 end
+                    end
+                end
+                -- O lag do extintor é por acúmulo de instâncias
+            end
+        end
+        
+        -- Delay menor para o extintor no daycare para spam massivo
+        if selectedLag == "Extintor" then
+            task.wait(0.05) 
+        else
+            task.wait(0.3)
+        end
+    end)
+end
+
+local function stopLag()
+    lagActive = false
+    if lagConnection then
+        lagConnection:Disconnect()
+        lagConnection = nil
+    end
+end
+
+LagTab:AddDropdown({
+    Name = "Tipo de Lag",
+    Description = "Extintor agora usa o método Daycare!",
+    Options = {"Laptop", "Extintor", "Bomba", "Maca"},
+    Default = "Laptop",
+    Callback = function(Value)
+        selectedLag = Value
+        if lagActive then
+            stopLag()
+            startLag()
+        end
+    end
+})
+
+LagTab:AddToggle({
+    Name = "Executar Lag",
+    Description = "Ativa o loop de spam e teleporte",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            startLag()
+            Window:Notify({
+                Title = "Lag Ativado",
+                Content = "Spammando: " .. selectedLag,
+                Duration = 3
+            })
+        else
+            stopLag()
+            Window:Notify({
+                Title = "Lag Parado",
+                Content = "Execução encerrada.",
+                Duration = 3
+            })
+        end
+    end
+})
+
 audios = {
     {Name = "Yamete Kudasai", ID = 108494476595033},
     {Name = "Gritinho", ID = 5710016194},
@@ -4796,6 +4935,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
