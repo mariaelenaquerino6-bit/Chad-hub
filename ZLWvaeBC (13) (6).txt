@@ -2950,18 +2950,8 @@ LagTab:AddToggle({
     Callback = function(Value)
         if Value then
             startLag()
-            Window:Notify({
-                Title = "Lag Ativado",
-                Content = "Spammando: " .. selectedLag,
-                Duration = 3
-            })
         else
             stopLag()
-            Window:Notify({
-                Title = "Lag Parado",
-                Content = "Execução encerrada.",
-                Duration = 3
-            })
         end
     end
 })
@@ -4935,6 +4925,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
