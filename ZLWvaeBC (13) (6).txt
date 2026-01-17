@@ -44,6 +44,7 @@ _G.FunVictim = ""
 _G.SelectedFling = "Fling School Bus"
 _G.SelectedAvatarPlayer = "nil"
 _G.RGBFlash = false
+_G.SelectedMethod = "Couch"
 
 -- [[ FUNÇÕES ORIGINAIS ]]
 local function To(x, y, z, localName)
@@ -484,118 +485,112 @@ end)
 
 MainTab:AddSection("Métodos")
 
+
 MainTab:AddDropdown({
-    Name = "Selecionar Método para Matar",
-    Options = {"Kill Couch (Individual)"},
-    Default = "Kill Couch (Individual)",
-    Callback = function(v) _G.KillMode = v end
+    Name = "Selecione o Método",
+    Options = {"Couch", "Ball", "Boat", "School Bus"},
+    Default = "Couch",
+    Callback = function(v) 
+        _G.SelectedMethod = v 
+    end
 })
 
-MainTab:AddButton({
-    Name = "Kill",
-    Callback = function()
-        if _G.IsTrapping then return end
-        _G.IsTrapping = true
-        
-        local playerChar = LPlayer.Character
-        local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
-        local playerHumanoid = playerChar and playerChar:FindFirstChildOfClass("Humanoid")
-        
-        if not playerHRP or not playerHumanoid then _G.IsTrapping = false return end
-        
-        local originalPos = playerHRP.CFrame -- Salva posição original
+-- Função para Kill Couch
+local function KillCouch(targetPlayer)
+    if _G.IsTrapping then return end
+    _G.IsTrapping = true
+    
+    local playerChar = LPlayer.Character
+    local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
+    local playerHumanoid = playerChar and playerChar:FindFirstChildOfClass("Humanoid")
+    
+    if not playerHRP or not playerHumanoid then _G.IsTrapping = false return end
+    
+    local originalPos = playerHRP.CFrame -- Salva posição original
 
-        -- Seleciona quem vai morrer
-        local targets = {}
-        if _G.KillMode == "Kill Couch (Individual)" then
-            local t = Players:FindFirstChild(_G.SelectedPlayer)
-            if t then table.insert(targets, t) end
-        else
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LPlayer then table.insert(targets, p) end
-            end
-        end
+    -- Seleciona quem vai morrer
+    local targets = {}
+    local t = Players:FindFirstChild(_G.SelectedPlayer)
+    if t then table.insert(targets, t) end
 
-        -- Inicia o Massacre
-        for _, targetPlayer in ipairs(targets) do
-            if not _G.IsTrapping then break end
+    -- Inicia o Massacre
+    for _, targetPlayer in ipairs(targets) do
+        if not _G.IsTrapping then break end
+        
+        if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHRP = targetPlayer.Character.HumanoidRootPart
+            local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
             
-            if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local targetHRP = targetPlayer.Character.HumanoidRootPart
-                local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if targetHum and not targetHum.Sit and targetHum.Health > 0 then
+                -- Pega o Sofá
+                pcall(function()
+                    RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
+                    task.wait(0.2)
+                    RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
+                end)
                 
-                if targetHum and not targetHum.Sit and targetHum.Health > 0 then
-                    -- Pega o Sofá
-                    pcall(function()
-                        RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
-                        task.wait(0.2)
-                        RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
-                    end)
+                task.wait(0.3)
+                local couch = LPlayer.Backpack:FindFirstChild("Couch")
+                if couch then couch.Parent = playerChar end
+                
+                task.wait(0.1)
+                game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+                task.wait(0.25)
+                
+                -- Física de Fling
+                workspace.FallenPartsDestroyHeight = 0/0
+                local bodyVel = Instance.new("BodyVelocity")
+                bodyVel.Name = "FlingForce"
+                bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
+                bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                bodyVel.Parent = playerHRP
+                
+                playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+                workspace.CurrentCamera.CameraSubject = targetPlayer.Character:FindFirstChild("Head") or targetHRP
+                
+                local rotation = 0
+                local startTime = tick()
+                
+                -- Loop de ataque no alvo atual
+                while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 and not targetHum.Sit do
+                    if tick() - startTime > 6 then break end -- 6 segundos por alvo
+                    RunService.Heartbeat:Wait()
                     
-                    task.wait(0.3)
-                    local couch = LPlayer.Backpack:FindFirstChild("Couch")
-                    if couch then couch.Parent = playerChar end
+                    rotation = rotation + 50
+                    local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
+                    playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
                     
-                    task.wait(0.1)
-                    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
-                    task.wait(0.25)
-                    
-                    -- Física de Fling
-                    workspace.FallenPartsDestroyHeight = 0/0
-                    local bodyVel = Instance.new("BodyVelocity")
-                    bodyVel.Name = "FlingForce"
-                    bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
-                    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                    bodyVel.Parent = playerHRP
-                    
-                    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-                    workspace.CurrentCamera.CameraSubject = targetPlayer.Character:FindFirstChild("Head") or targetHRP
-                    
-                    local rotation = 0
-                    local startTime = tick()
-                    
-                    -- Loop de ataque no alvo atual
-                    while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 and not targetHum.Sit do
-                        if tick() - startTime > 6 then break end -- 6 segundos por alvo
-                        RunService.Heartbeat:Wait()
-                        
-                        rotation = rotation + 50
-                        local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
-                        playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
-                        
-                        playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
-                        playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
-                    end
-                    
-                    -- Limpeza rápida para o próximo alvo
-                    bodyVel:Destroy()
-                    playerHumanoid:UnequipTools()
-                    pcall(function() RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") end)
-                    
-                    for _, part in pairs(playerChar:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.Velocity = Vector3.zero
-                            part.RotVelocity = Vector3.zero
-                        end
+                    playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
+                    playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
+                end
+                
+                -- Limpeza rápida para o próximo alvo
+                bodyVel:Destroy()
+                playerHumanoid:UnequipTools()
+                pcall(function() RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") end)
+                
+                for _, part in pairs(playerChar:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Velocity = Vector3.zero
+                        part.RotVelocity = Vector3.zero
                     end
                 end
             end
         end
-
-        -- Finalização Total
-        _G.IsTrapping = false
-        playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-        playerHRP.Anchored = true
-        playerHRP.CFrame = originalPos
-        task.wait(0.2)
-        playerHRP.Velocity = Vector3.zero
-        playerHRP.RotVelocity = Vector3.zero
-        playerHRP.Anchored = false
-        workspace.CurrentCamera.CameraSubject = playerHumanoid
     end
-})
 
-MainTab:AddSection("Fling")
+    -- Finalização Total
+    _G.IsTrapping = false
+    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    playerHRP.Anchored = true
+    playerHRP.CFrame = originalPos
+    task.wait(0.2)
+    playerHRP.Velocity = Vector3.zero
+    playerHRP.RotVelocity = Vector3.zero
+    playerHRP.Anchored = false
+    workspace.CurrentCamera.CameraSubject = playerHumanoid
+end
+
 
 -- Função para Fling School Bus
 local function FlingSchoolBus(targetPlayer)
@@ -921,18 +916,25 @@ local function FlingBall(target)
     end
 end
 
--- Dropdown atualizado com as três opções
-MainTab:AddDropdown({
-    Name = "Selecionar Fling",
-    Options = {"Fling School Bus", "Fling - Boat", "Fling Ball"},
-    Default = "Fling School Bus",
-    Callback = function(v) 
-        _G.SelectedFling = v 
+
+MainTab:AddButton({
+    Name = "Kill",
+    Callback = function()
+        if _G.SelectedMethod ~= "Couch" then
+            Window:Notify({Title = "Erro", Content = "Método Kill só funciona com Couch!", Duration = 3})
+            return
+        end
+        local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
+        if not targetPlayer then 
+            Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
+            return 
+        end
+        KillCouch(targetPlayer)
     end
 })
- 
+
 MainTab:AddButton({
-    Name = "Executar Fling",
+    Name = "Fling",
     Callback = function()
         local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
         if not targetPlayer then 
@@ -940,19 +942,20 @@ MainTab:AddButton({
             return 
         end
 
-        if _G.SelectedFling == "Fling School Bus" then
-            FlingSchoolBus(targetPlayer)
-        elseif _G.SelectedFling == "Fling - Boat" then
-            FlingBoat(targetPlayer)
-        elseif _G.SelectedFling == "Fling Ball" then
+        if _G.SelectedMethod == "Ball" then
             FlingBall(targetPlayer)
+        elseif _G.SelectedMethod == "Boat" then
+            FlingBoat(targetPlayer)
+        elseif _G.SelectedMethod == "School Bus" then
+            FlingSchoolBus(targetPlayer)
+        else
+            Window:Notify({Title = "Erro", Content = "Método Fling não disponível para Couch!", Duration = 3})
         end
     end
 })
-    
 
 MainTab:AddToggle({
-    Name = "Auto Fling (Método Selecionado)",
+    Name = "Auto Fling",
     Default = false,
     Callback = function(state)
         _G.AutoFlingActive = state
@@ -962,15 +965,21 @@ MainTab:AddToggle({
             if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
                 return
             end
-            if not _G.SelectedFling then
+            
+            -- Verifica se o método selecionado é válido para Auto Fling
+            if _G.SelectedMethod == "Boat" then
+                Window:Notify({
+                    Title = "Erro",
+                    Content = "Método Boat não disponível para Auto Fling",
+                    Duration = 3
+                })
                 return
             end
             
-            -- Verifica se o método selecionado é Fling Boat (não permitido)
-            if _G.SelectedFling == "Fling - Boat" then
+            if _G.SelectedMethod == "Couch" then
                 Window:Notify({
                     Title = "Erro",
-                    Content = "Método Fling - Boat não disponível para Auto Fling",
+                    Content = "Método Couch não disponível para Auto Fling",
                     Duration = 3
                 })
                 return
@@ -997,13 +1006,12 @@ MainTab:AddToggle({
                     
                     if not _G.AutoFlingActive then break end
                     
-                    -- Executa o método selecionado (excluindo Fling Boat)
-                    if _G.SelectedFling == "Fling School Bus" then
+                    -- Executa o método selecionado
+                    if _G.SelectedMethod == "School Bus" then
                         FlingSchoolBus(target)
-                    elseif _G.SelectedFling == "Fling Ball" then
+                    elseif _G.SelectedMethod == "Ball" then
                         FlingBall(target)
                     else
-                        -- Se chegou aqui com outro método, para o loop
                         break
                     end
                     
@@ -1037,7 +1045,8 @@ MainTab:AddToggle({
     end
 })
 
-MainTab:AddSection("Methods ALL")
+
+MainTab:AddSection("Methods All")
     
 local flingAllLoop = nil
 
@@ -4925,6 +4934,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
