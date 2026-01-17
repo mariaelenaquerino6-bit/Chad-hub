@@ -4921,15 +4921,6 @@ for _, p in pairs(Players:GetPlayers()) do
     WatchDeath(p)
 end
 
-DiscordTab:AddDiscordInvite({
-	Title = "redz black Comunity",
-	Description = "Red Black hub",
-	Banner = "rbxassetid://17382040552",
-	Logo = "rbxassetid://17382040552",
-	Invite = "https://discord.gg/qjHV73bctf",
-	Members = 470000, -- Optional
-	Online = 20000, -- Optional
-})
 
 task.spawn(function()
     pcall(function()
@@ -4950,6 +4941,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
