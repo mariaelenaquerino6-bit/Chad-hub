@@ -916,7 +916,8 @@ local function FlingBall(target)
     end
 end
 
--- [[ FUNÇÃO BRING COUCH ]]
+
+-- [[ FUNÇÃO BRING COUCH OTIMIZADA ]]
 local function BringCouch(targetPlayer)
     if _G.IsTrapping then return end
     _G.IsTrapping = true
@@ -930,180 +931,100 @@ local function BringCouch(targetPlayer)
         return 
     end
     
-    local originalPos = playerHRP.CFrame -- Salva posição original
+    -- Verificação do Alvo
+    local targetChar = targetPlayer.Character
+    local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+    local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+    
+    if not targetHRP or not targetHum then
+        _G.IsTrapping = false
+        return
+    end
 
-    -- Pega o Sofá
+    local originalPos = playerHRP.CFrame
+
+    -- 1. Pegar e Equipar o Sofá
     pcall(function()
         RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
-        task.wait(0.2)
+        task.wait(0.15)
         RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
     end)
     
-    task.wait(0.3)
-    local couch = LPlayer.Backpack:FindFirstChild("Couch")
-    if couch then couch.Parent = playerChar end
-    
-    task.wait(0.1)
-    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
-    task.wait(0.25)
-    
-    -- Configuração para fazer o alvo sentar
-    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-    
-    local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
-    
-    if not targetHRP or not targetHum then 
-        _G.IsTrapping = false
+    local couch = LPlayer.Backpack:WaitForChild("Couch", 2)
+    if not couch then 
+        _G.IsTrapping = false 
         return 
     end
+    couch.Parent = playerChar
     
-    local rotation = 0
-    local startTime = tick()
+    -- Desabilita sentar para o próprio jogador não ocupar o sofá
+    playerHumanoid.Sit = false
+    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+    
+    -- 2. Ativar o Sofá (Colocar no mundo)
+    task.wait(0.1)
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+    
+    -- Espera o sofá aparecer no Workspace (geralmente vira um Model com Seat)
+    task.wait(0.2)
+    
     local success = false
+    local startTime = tick()
     
-    -- Loop até o alvo sentar ou timeout
-    while tick() - startTime < 6 and not targetHum.Sit do
+    -- 3. Loop de Interpolação e Força de Sentar
+    -- Otimização: Movemos o sofá com Velocity para "enganar" a rede e forçar o toque
+    while tick() - startTime < 5 do
+        if not targetHRP or not targetHum or targetHum.Sit then
+            if targetHum.Sit then success = true end
+            break
+        end
+
         RunService.Heartbeat:Wait()
         
-        rotation = rotation + 50
-        local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
-        playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
+        -- Cálculo de posição: Um pouco abaixo do alvo para o Seat detectar o quadril
+        local targetPos = targetHRP.CFrame * CFrame.new(0, -1.5, 0)
         
-        -- Verifica se o alvo sentou
-        if targetHum.Sit then
-            success = true
-            break
+        -- Aplica CFrame e remove a velocidade do alvo (estabiliza para o servidor registrar)
+        playerHRP.CFrame = targetPos * CFrame.Angles(math.rad(90), 0, 0)
+        playerHRP.Velocity = Vector3.new(0, 50, 0) -- Força o motor de física a atualizar o toque
+        
+        -- Pequeno "truque" de pulo para o alvo perder o chão e sentar no objeto abaixo
+        if targetHum.FloorMaterial ~= Enum.Material.Air then
+            -- Apenas a posição já costuma bastar, mas mover o sofá para cima/baixo ajuda
         end
     end
     
-    -- Teleporta o jogador de volta à posição original
+    -- 4. Finalização e Limpeza
     playerHRP.Anchored = true
     playerHRP.CFrame = originalPos
-    task.wait(0.2)
-    playerHRP.Velocity = Vector3.zero
-    playerHRP.RotVelocity = Vector3.zero
-    playerHRP.Anchored = false
     
-    -- Deleta o couch
+    task.wait(0.1)
+    
+    -- Deleta o sofá para o servidor processar que o item sumiu mas o alvo ficou na "posição de sentado"
     pcall(function() 
         RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") 
     end)
     
-    _G.IsTrapping = false
+    task.wait(0.1)
+    playerHRP.Anchored = false
     playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-    workspace.CurrentCamera.CameraSubject = playerHumanoid
+    _G.IsTrapping = false
     
     if success then
-        Window:Notify({Title = "Bring", Content = "Jogador trazido com sucesso!", Duration = 3})
+        Library:Notify({
+            Title = "Bring Success",
+            Content = "O alvo " .. targetPlayer.DisplayName .. " foi capturado!",
+            Duration = 3
+        })
     else
-        Window:Notify({Title = "Bring", Content = "Falhou ao fazer o jogador sentar", Duration = 3})
+        Library:Notify({
+            Title = "Bring Failed",
+            Content = "Não foi possível fazer o alvo sentar.",
+            Duration = 3
+        })
     end
 end
 
--- [[ FUNÇÃO BRING SCHOOL BUS ]]
-local function BringSchoolBus(targetPlayer)
-    local LocalPlayer = game.Players.LocalPlayer
-    local RS = game:GetService("ReplicatedStorage")
- 
-    if targetPlayer.Character and LocalPlayer.Character then
-        local playerChar = LocalPlayer.Character
-        local playerHumanoid = playerChar:FindFirstChildOfClass("Humanoid")
-        local playerHRP = playerChar:FindFirstChild("HumanoidRootPart")
- 
-        if playerHumanoid and playerHRP then
-            local originalPosition = playerHRP.CFrame 
- 
-            pcall(function()
-                playerHRP.Anchored = true
-                playerHRP.CFrame = CFrame.new(1181.83, 76.08, -1158.83)
-                task.wait(0.2)
-                playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
-                playerHRP.Anchored = false
-                playerHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-            end)
- 
-            task.wait(0.5)
- 
-            pcall(function() 
-                RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") 
-            end)
-            pcall(function() 
-                RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("PickingCar", "SchoolBus") 
-            end)
- 
-            task.wait(1)
- 
-            local vFolder = game.Workspace:FindFirstChild("Vehicles")
-            if vFolder then
-                local bus = vFolder:FindFirstChild(LocalPlayer.Name .. "Car")
-                if bus then
-                    pcall(function()
-                        playerHRP.Anchored = true
-                        playerHRP.CFrame = CFrame.new(1171.15, 79.45, -1166.2)
-                        task.wait(0.2)
-                        playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
-                        playerHRP.Anchored = false
-                        playerHumanoid:ChangeState(Enum.HumanoidStateType.Seated)
-                    end)
- 
-                    local startTime = tick()
-                    local success = false
-                    
-                    while tick() - startTime < 10 do
-                        task.wait(0.5)
-                        
-                        -- Verifica se o alvo está sentado
-                        local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
-                        if targetHum and targetHum.Sit then
-                            success = true
-                            break
-                        end
-                        
-                        -- Move o ônibus suavemente em direção ao alvo
-                        local targetPos = targetPlayer.Character.HumanoidRootPart.Position
-                        bus:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 0, 5)))
-                    end
- 
-                    -- Teleporta o jogador de volta à posição original
-                    playerHRP.Anchored = true
-                    playerHRP.CFrame = originalPosition
-                    task.wait(0.2)
-                    playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
-                    playerHRP.Anchored = false
-                    playerHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-                    
-                    -- Deleta o ônibus
-                    pcall(function() 
-                        RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") 
-                    end)
-                    
-                    if success then
-                        Library:Notify({Title = "Bring", Content = "Jogador trazido com sucesso!", Duration = 3})
-                    else
-                        Library:Notify({Title = "Bring", Content = "Falhou ao fazer o jogador entrar no ônibus", Duration = 3})
-                    end
-                end
-            end
-        end
-    end
-end
-
--- [[ FUNÇÃO PRINCIPAL BRING ]]
-local function BringPlayer(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then
-        Window:Notify({Title = "Erro", Content = "Jogador inválido!", Duration = 3})
-        return
-    end
-    
-    if _G.SelectedMethod == "Couch" then
-        BringCouch(targetPlayer)
-    elseif _G.SelectedMethod == "School Bus" then
-        BringSchoolBus(targetPlayer)
-    else
-        Window:Notify({Title = "Erro", Content = "Bring só funciona com Couch ou School Bus!", Duration = 3})
-    end
-end
 
 MainTab:AddButton({
     Name = "Kill",
@@ -1145,12 +1066,16 @@ MainTab:AddButton({
 MainTab:AddButton({
     Name = "Bring",
     Callback = function()
+        if _G.SelectedMethod ~= "Couch" then
+            Window:Notify({Title = "Erro", Content = "Bring só funciona com Couch!", Duration = 3})
+            return
+        end
         local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
         if not targetPlayer then 
             Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
             return 
         end
-        BringPlayer(targetPlayer)
+        BringCouch(targetPlayer)
     end
 })
 
@@ -5134,6 +5059,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
