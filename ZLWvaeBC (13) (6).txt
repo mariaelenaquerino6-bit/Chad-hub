@@ -917,7 +917,7 @@ local function FlingBall(target)
 end
 
 
--- [[ FUNÇÃO BRING COUCH OTIMIZADA ]]
+-- [[ FUNÇÃO BRING COUCH - REGISTRY OPTIMIZED ]]
 local function BringCouch(targetPlayer)
     if _G.IsTrapping then return end
     _G.IsTrapping = true
@@ -931,100 +931,93 @@ local function BringCouch(targetPlayer)
         return 
     end
     
-    -- Verificação do Alvo
-    local targetChar = targetPlayer.Character
-    local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
-    local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
-    
-    if not targetHRP or not targetHum then
-        _G.IsTrapping = false
-        return
-    end
-
     local originalPos = playerHRP.CFrame
 
-    -- 1. Pegar e Equipar o Sofá
+    -- 1. Registro de Limpeza e Requisição do Item
+    -- O servidor precisa de um tempo mínimo para processar a remoção antes da nova entrada
     pcall(function()
         RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
-        task.wait(0.15)
+    end)
+    task.wait(0.1) -- Tempo exato para o servidor registrar o inventário vazio
+
+    pcall(function()
         RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
     end)
     
-    local couch = LPlayer.Backpack:WaitForChild("Couch", 2)
+    -- 2. Verificação de Posse
+    -- O WaitForChild garante que o script só avance quando o servidor replicar o sofá para o cliente
+    local couch = LPlayer.Backpack:WaitForChild("Couch", 3)
     if not couch then 
         _G.IsTrapping = false 
         return 
     end
-    couch.Parent = playerChar
     
-    -- Desabilita sentar para o próprio jogador não ocupar o sofá
-    playerHumanoid.Sit = false
+    -- Equipar o item
+    couch.Parent = playerChar
+    task.wait(0.05) -- Registro da animação de equipar no servidor
+
+    -- 3. Ativação do Gatilho de Ativação (F)
+    -- VirtualInputManager precisa de um delay pequeno para o servidor reconhecer a tecla pressionada
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+    task.wait(0.15) -- Delay crítico para o Brookhaven instanciar o objeto do sofá no mundo
+    
+    -- Bloqueia o próprio assento para evitar auto-trava
     playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
     
-    -- 2. Ativar o Sofá (Colocar no mundo)
-    task.wait(0.1)
-    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+    local targetChar = targetPlayer.Character
+    local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+    local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
     
-    -- Espera o sofá aparecer no Workspace (geralmente vira um Model com Seat)
-    task.wait(0.2)
+    if not targetHRP or not targetHum then 
+        _G.IsTrapping = false
+        return 
+    end
     
-    local success = false
+    local rotation = 0
     local startTime = tick()
+    local success = false
     
-    -- 3. Loop de Interpolação e Força de Sentar
-    -- Otimização: Movemos o sofá com Velocity para "enganar" a rede e forçar o toque
-    while tick() - startTime < 5 do
-        if not targetHRP or not targetHum or targetHum.Sit then
-            if targetHum.Sit then success = true end
-            break
-        end
-
+    -- 4. Loop de Giro (Mantido Original) com Verificação de Estado
+    while tick() - startTime < 6 and not targetHum.Sit do
         RunService.Heartbeat:Wait()
         
-        -- Cálculo de posição: Um pouco abaixo do alvo para o Seat detectar o quadril
-        local targetPos = targetHRP.CFrame * CFrame.new(0, -1.5, 0)
+        rotation = rotation + 50
+        local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
+        playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
         
-        -- Aplica CFrame e remove a velocidade do alvo (estabiliza para o servidor registrar)
-        playerHRP.CFrame = targetPos * CFrame.Angles(math.rad(90), 0, 0)
-        playerHRP.Velocity = Vector3.new(0, 50, 0) -- Força o motor de física a atualizar o toque
-        
-        -- Pequeno "truque" de pulo para o alvo perder o chão e sentar no objeto abaixo
-        if targetHum.FloorMaterial ~= Enum.Material.Air then
-            -- Apenas a posição já costuma bastar, mas mover o sofá para cima/baixo ajuda
+        -- Verifica se o servidor já replicou o estado de sentado do alvo
+        if targetHum.Sit then
+            success = true
+            break
         end
     end
     
-    -- 4. Finalização e Limpeza
+    -- 5. Finalização e Sincronização de Retorno
     playerHRP.Anchored = true
     playerHRP.CFrame = originalPos
+    task.wait(0.1) -- Garante que o servidor registrou a posição de "entrega" do alvo
     
-    task.wait(0.1)
-    
-    -- Deleta o sofá para o servidor processar que o item sumiu mas o alvo ficou na "posição de sentado"
+    -- Deleta o sofá APÓS confirmar que o alvo está na posição final
     pcall(function() 
         RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") 
     end)
     
-    task.wait(0.1)
+    task.wait(0.1) -- Delay para limpeza de cache do servidor
+    playerHRP.Velocity = Vector3.zero
+    playerHRP.RotVelocity = Vector3.zero
     playerHRP.Anchored = false
-    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    
+    -- Restaura estados
     _G.IsTrapping = false
+    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    workspace.CurrentCamera.CameraSubject = playerHumanoid
     
     if success then
-        Library:Notify({
-            Title = "Bring Success",
-            Content = "O alvo " .. targetPlayer.DisplayName .. " foi capturado!",
-            Duration = 3
-        })
+        Window:Notify({Title = "Bring", Content = "Jogador trazido e registrado!", Duration = 3})
     else
-        Library:Notify({
-            Title = "Bring Failed",
-            Content = "Não foi possível fazer o alvo sentar.",
-            Duration = 3
-        })
+        Window:Notify({Title = "Bring", Content = "O servidor não validou o assento.", Duration = 3})
     end
 end
-
 
 MainTab:AddButton({
     Name = "Kill",
@@ -5059,6 +5052,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
