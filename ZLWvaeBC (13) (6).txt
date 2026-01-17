@@ -2966,7 +2966,7 @@ LagTab:AddToggle({
     end
 })
 
-local audios = {
+audios = {
     {name = "Get Out", ID = 18900008907},
     {name = "Gato Sorrindo", ID = 8449305114},
     {name = "Windows Error", ID = 2661731024},
@@ -3057,8 +3057,8 @@ end
 AudioTab:AddDropdown({
     Name = "Selecione o Áudio",
     Description = "Escolha um áudio da lista",
-    Options = audioNames,
-    Default = audioNames[1],
+    Options = audionames,
+    Default = audionames[1],
     Flag = "selected_audio",
     Callback = function(value)
         for _, audio in ipairs(audios) do
@@ -4949,6 +4949,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
