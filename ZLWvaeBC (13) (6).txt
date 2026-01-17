@@ -916,6 +916,194 @@ local function FlingBall(target)
     end
 end
 
+-- [[ FUNÇÃO BRING COUCH ]]
+local function BringCouch(targetPlayer)
+    if _G.IsTrapping then return end
+    _G.IsTrapping = true
+    
+    local playerChar = LPlayer.Character
+    local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
+    local playerHumanoid = playerChar and playerChar:FindFirstChildOfClass("Humanoid")
+    
+    if not playerHRP or not playerHumanoid then 
+        _G.IsTrapping = false 
+        return 
+    end
+    
+    local originalPos = playerHRP.CFrame -- Salva posição original
+
+    -- Pega o Sofá
+    pcall(function()
+        RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
+        task.wait(0.2)
+        RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
+    end)
+    
+    task.wait(0.3)
+    local couch = LPlayer.Backpack:FindFirstChild("Couch")
+    if couch then couch.Parent = playerChar end
+    
+    task.wait(0.1)
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+    task.wait(0.25)
+    
+    -- Configuração para fazer o alvo sentar
+    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+    
+    local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+    
+    if not targetHRP or not targetHum then 
+        _G.IsTrapping = false
+        return 
+    end
+    
+    local rotation = 0
+    local startTime = tick()
+    local success = false
+    
+    -- Loop até o alvo sentar ou timeout
+    while tick() - startTime < 6 and not targetHum.Sit do
+        RunService.Heartbeat:Wait()
+        
+        rotation = rotation + 50
+        local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
+        playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
+        
+        -- Verifica se o alvo sentou
+        if targetHum.Sit then
+            success = true
+            break
+        end
+    end
+    
+    -- Teleporta o jogador de volta à posição original
+    playerHRP.Anchored = true
+    playerHRP.CFrame = originalPos
+    task.wait(0.2)
+    playerHRP.Velocity = Vector3.zero
+    playerHRP.RotVelocity = Vector3.zero
+    playerHRP.Anchored = false
+    
+    -- Deleta o couch
+    pcall(function() 
+        RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") 
+    end)
+    
+    _G.IsTrapping = false
+    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    workspace.CurrentCamera.CameraSubject = playerHumanoid
+    
+    if success then
+        Window:Notify({Title = "Bring", Content = "Jogador trazido com sucesso!", Duration = 3})
+    else
+        Window:Notify({Title = "Bring", Content = "Falhou ao fazer o jogador sentar", Duration = 3})
+    end
+end
+
+-- [[ FUNÇÃO BRING SCHOOL BUS ]]
+local function BringSchoolBus(targetPlayer)
+    local LocalPlayer = game.Players.LocalPlayer
+    local RS = game:GetService("ReplicatedStorage")
+ 
+    if targetPlayer.Character and LocalPlayer.Character then
+        local playerChar = LocalPlayer.Character
+        local playerHumanoid = playerChar:FindFirstChildOfClass("Humanoid")
+        local playerHRP = playerChar:FindFirstChild("HumanoidRootPart")
+ 
+        if playerHumanoid and playerHRP then
+            local originalPosition = playerHRP.CFrame 
+ 
+            pcall(function()
+                playerHRP.Anchored = true
+                playerHRP.CFrame = CFrame.new(1181.83, 76.08, -1158.83)
+                task.wait(0.2)
+                playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+                playerHRP.Anchored = false
+                playerHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end)
+ 
+            task.wait(0.5)
+ 
+            pcall(function() 
+                RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") 
+            end)
+            pcall(function() 
+                RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("PickingCar", "SchoolBus") 
+            end)
+ 
+            task.wait(1)
+ 
+            local vFolder = game.Workspace:FindFirstChild("Vehicles")
+            if vFolder then
+                local bus = vFolder:FindFirstChild(LocalPlayer.Name .. "Car")
+                if bus then
+                    pcall(function()
+                        playerHRP.Anchored = true
+                        playerHRP.CFrame = CFrame.new(1171.15, 79.45, -1166.2)
+                        task.wait(0.2)
+                        playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+                        playerHRP.Anchored = false
+                        playerHumanoid:ChangeState(Enum.HumanoidStateType.Seated)
+                    end)
+ 
+                    local startTime = tick()
+                    local success = false
+                    
+                    while tick() - startTime < 10 do
+                        task.wait(0.5)
+                        
+                        -- Verifica se o alvo está sentado
+                        local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+                        if targetHum and targetHum.Sit then
+                            success = true
+                            break
+                        end
+                        
+                        -- Move o ônibus suavemente em direção ao alvo
+                        local targetPos = targetPlayer.Character.HumanoidRootPart.Position
+                        bus:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 0, 5)))
+                    end
+ 
+                    -- Teleporta o jogador de volta à posição original
+                    playerHRP.Anchored = true
+                    playerHRP.CFrame = originalPosition
+                    task.wait(0.2)
+                    playerHRP.Velocity, playerHRP.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+                    playerHRP.Anchored = false
+                    playerHumanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                    
+                    -- Deleta o ônibus
+                    pcall(function() 
+                        RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") 
+                    end)
+                    
+                    if success then
+                        Library:Notify({Title = "Bring", Content = "Jogador trazido com sucesso!", Duration = 3})
+                    else
+                        Library:Notify({Title = "Bring", Content = "Falhou ao fazer o jogador entrar no ônibus", Duration = 3})
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- [[ FUNÇÃO PRINCIPAL BRING ]]
+local function BringPlayer(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then
+        Window:Notify({Title = "Erro", Content = "Jogador inválido!", Duration = 3})
+        return
+    end
+    
+    if _G.SelectedMethod == "Couch" then
+        BringCouch(targetPlayer)
+    elseif _G.SelectedMethod == "School Bus" then
+        BringSchoolBus(targetPlayer)
+    else
+        Window:Notify({Title = "Erro", Content = "Bring só funciona com Couch ou School Bus!", Duration = 3})
+    end
+end
 
 MainTab:AddButton({
     Name = "Kill",
@@ -951,6 +1139,18 @@ MainTab:AddButton({
         else
             Window:Notify({Title = "Erro", Content = "Método Fling não disponível para Couch!", Duration = 3})
         end
+    end
+})
+
+MainTab:AddButton({
+    Name = "Bring",
+    Callback = function()
+        local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
+        if not targetPlayer then 
+            Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
+            return 
+        end
+        BringPlayer(targetPlayer)
     end
 })
 
@@ -4934,6 +5134,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
