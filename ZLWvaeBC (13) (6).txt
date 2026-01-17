@@ -917,7 +917,7 @@ local function FlingBall(target)
 end
 
 
--- [[ FUNÇÃO BRING COUCH - REGISTRY OPTIMIZED ]]
+-- [[ FUNÇÃO BRING COUCH - SERVER POSITION FIX ]]
 local function BringCouch(targetPlayer)
     if _G.IsTrapping then return end
     _G.IsTrapping = true
@@ -933,89 +933,86 @@ local function BringCouch(targetPlayer)
     
     local originalPos = playerHRP.CFrame
 
-    -- 1. Registro de Limpeza e Requisição do Item
-    -- O servidor precisa de um tempo mínimo para processar a remoção antes da nova entrada
+    -- 1. Limpeza e Requisição
     pcall(function()
         RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
     end)
-    task.wait(0.1) -- Tempo exato para o servidor registrar o inventário vazio
+    task.wait(0.1)
 
     pcall(function()
         RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
     end)
     
-    -- 2. Verificação de Posse
-    -- O WaitForChild garante que o script só avance quando o servidor replicar o sofá para o cliente
     local couch = LPlayer.Backpack:WaitForChild("Couch", 3)
-    if not couch then 
-        _G.IsTrapping = false 
-        return 
-    end
+    if not couch then _G.IsTrapping = false return end
     
-    -- Equipar o item
     couch.Parent = playerChar
-    task.wait(0.05) -- Registro da animação de equipar no servidor
+    task.wait(0.1) -- Tempo para o servidor registrar a ferramenta equipada
 
-    -- 3. Ativação do Gatilho de Ativação (F)
-    -- VirtualInputManager precisa de um delay pequeno para o servidor reconhecer a tecla pressionada
+    -- 2. Ativação do Sofá
     game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
-    task.wait(0.15) -- Delay crítico para o Brookhaven instanciar o objeto do sofá no mundo
+    task.wait(0.2) -- Delay para o sofá ser instanciado fisicamente
     
-    -- Bloqueia o próprio assento para evitar auto-trava
     playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
     
     local targetChar = targetPlayer.Character
     local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
     local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
     
-    if not targetHRP or not targetHum then 
-        _G.IsTrapping = false
-        return 
-    end
+    if not targetHRP or not targetHum then _G.IsTrapping = false return end
     
     local rotation = 0
     local startTime = tick()
     local success = false
     
-    -- 4. Loop de Giro (Mantido Original) com Verificação de Estado
+    -- 3. Loop de Captura (Giro)
     while tick() - startTime < 6 and not targetHum.Sit do
         RunService.Heartbeat:Wait()
-        
         rotation = rotation + 50
         local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
         playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
         
-        -- Verifica se o servidor já replicou o estado de sentado do alvo
         if targetHum.Sit then
             success = true
             break
         end
     end
     
-    -- 5. Finalização e Sincronização de Retorno
-    playerHRP.Anchored = true
-    playerHRP.CFrame = originalPos
-    task.wait(0.1) -- Garante que o servidor registrou a posição de "entrega" do alvo
+    -- 4. O PONTO CHAVE: Retorno e Registro de Posição
+    if success then
+        -- Teleporta para o destino
+        playerHRP.CFrame = originalPos
+        
+        -- AGUARDA o servidor entender que o sofá está na nova posição.
+        -- Se deletar antes desse tempo, o servidor cancela o movimento e volta o player.
+        task.wait(0.5) 
+        
+        -- Forçamos um pequeno movimento para atualizar o estado de rede do sofá na nova posição
+        playerHRP.CFrame = originalPos * CFrame.new(0, 0.1, 0)
+        task.wait(0.1)
+        playerHRP.CFrame = originalPos
+        
+        -- Aguarda o "congelamento" da posição no servidor do alvo
+        task.wait(0.4) 
+    else
+        playerHRP.CFrame = originalPos
+    end
     
-    -- Deleta o sofá APÓS confirmar que o alvo está na posição final
+    -- 5. Deleção do Sofá
+    -- Ao deletar aqui, o player cai. Se ele voltar, é porque o servidor dele 
+    -- ainda não tinha recebido os pacotes da nova posição (Lag/Ping).
     pcall(function() 
         RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") 
     end)
     
-    task.wait(0.1) -- Delay para limpeza de cache do servidor
+    task.wait(0.2)
     playerHRP.Velocity = Vector3.zero
-    playerHRP.RotVelocity = Vector3.zero
     playerHRP.Anchored = false
-    
-    -- Restaura estados
     _G.IsTrapping = false
     playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-    workspace.CurrentCamera.CameraSubject = playerHumanoid
     
     if success then
-        Window:Notify({Title = "Bring", Content = "Jogador trazido e registrado!", Duration = 3})
-    else
-        Window:Notify({Title = "Bring", Content = "O servidor não validou o assento.", Duration = 3})
+        Window:Notify({Title = "Bring", Content = "Jogador entregue.", Duration = 3})
     end
 end
 
@@ -5052,6 +5049,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
