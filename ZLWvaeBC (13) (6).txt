@@ -4916,12 +4916,6 @@ Players.PlayerRemoving:Connect(function(Player)
     end
 end)
 
--- Inicializar monitorização para quem já está no servidor
-for _, p in pairs(Players:GetPlayers()) do
-    WatchDeath(p)
-end
-
-
 task.spawn(function()
     pcall(function()
         local RE = game:GetService("ReplicatedStorage"):WaitForChild("RE", 9e9)
@@ -4941,6 +4935,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
