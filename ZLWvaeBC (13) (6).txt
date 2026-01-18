@@ -1429,7 +1429,7 @@ MainTab:AddToggle({
             if _G.SelectedMethod == "Ball" then
                 Window:Notify({
                     Title = "Erro",
-                    Content = "Método Ball não disponível para Auto Fling",
+                    Content = "Método Ball não disponível para Auto Kill",
                     Duration = 3
                 })
                 return
@@ -5522,6 +5522,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
