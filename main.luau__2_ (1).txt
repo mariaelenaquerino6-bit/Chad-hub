@@ -881,7 +881,7 @@ BackgroundColor3="Colors.Buttons.Default"
 Childs={
 E("TextLabel","Title",{
 BackgroundTransparency=1,
-Font=Enum.Font.GothamMedium,
+Font=Enum.Font.FredokaOne,
 Text=am.Title,
 TextSize=10,
 TextXAlignment=Enum.TextXAlignment.Left,
