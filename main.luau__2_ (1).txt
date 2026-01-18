@@ -56,20 +56,20 @@ local r={
 Darker={
 Colors={
 Background=ColorSequence.new{
-ColorSequenceKeypoint.new(0.00,Color3.fromRGB(25,25,25),
-ColorSequenceKeypoint.new(0.50,Color3.fromRGB(32.5,32.5,32.5)),
-ColorSequenceKeypoint.new(1.00,Color3.fromRGB(25,25,25))
+ColorSequenceKeypoint.new(0.00,Color3.fromRGB(15,25,45)),
+ColorSequenceKeypoint.new(0.50,Color3.fromRGB(20,40,70)),
+ColorSequenceKeypoint.new(1.00,Color3.fromRGB(15,25,45))
 },
-Primary=Color3.fromRGB(88,101,42),
-OnPrimary=Color3.fromRGB(61,67,135),
-ScrollBar=Color3.fromRGB(1,76,105),
+Primary=Color3.fromRGB(0,140,255),
+OnPrimary=Color3.fromRGB(0,100,200),
+ScrollBar=Color3.fromRGB(0,150,255),
 Stroke=Color3.fromRGB(50,80,130),
 
-Error=Color3.fromRGB(255,102,102),
+Error=Color3.fromRGB(255,0,0),
 Icons=Color3.fromRGB(232,233,235),
 
-JoinButton=Color3.fromRGB(37,128,69),
-Link=Color3.fromRGB(40,150,255),
+JoinButton=Color3.fromRGB(0,255,0),
+Link=Color3.fromRGB(255,0,0),
 
 Dialog={
 Background=Color3.fromRGB(28,28,28)
@@ -92,7 +92,7 @@ SliderBar=Color3.fromRGB(255,0,0),
 SliderNumber=Color3.fromRGB(0,0,0),
 },
 Dropdown={
-Holder=Color3.fromRGB(30,30,30),
+Holder=Color3.fromRGB(0,0,255),
 }
 },
 Icons={
@@ -114,7 +114,7 @@ Bold=Enum.Font.BuilderSansBold,
 ExtraBold=Enum.Font.BuilderSansExtraBold,
 SliderValue=Enum.Font.FredokaOne
 },
-BackgroundTransparency=0.03
+BackgroundTransparency=0.5
 }
 }
 
