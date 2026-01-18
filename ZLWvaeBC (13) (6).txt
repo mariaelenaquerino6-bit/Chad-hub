@@ -1479,7 +1479,7 @@ MainTab:AddToggle({
                     -- Espera o respawn (se morreu)
                     if target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health <= 0 then
                         local respawnTime = 0
-                        while _G.AutoFlingActive and respawnTime < 30 do
+                        while _G.AutoKillActive and respawnTime < 30 do
                             if target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 then
                                 break
                             end
@@ -5522,6 +5522,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
