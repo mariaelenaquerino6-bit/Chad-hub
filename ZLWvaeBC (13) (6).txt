@@ -496,7 +496,6 @@ MainTab:AddDropdown({
 })
 
 
--- [[ FUNÇÃO BRING BUS ]]
 local function BringBus(target)
     local LocalPlayer = game.Players.LocalPlayer
     local RS = game:GetService("ReplicatedStorage")
@@ -511,7 +510,7 @@ local function BringBus(target)
     if hrp and hum then
         local originalPos = hrp.CFrame
         
-        -- 1. Spawn do Ônibus (Igual ao Fling)
+        -- Spawn do Ônibus (Método Fling Original)
         pcall(function()
             hrp.Anchored = true
             hrp.CFrame = CFrame.new(1181.83, 76.08, -1158.83)
@@ -529,7 +528,7 @@ local function BringBus(target)
         
         local bus = workspace:FindFirstChild("Vehicles") and workspace.Vehicles:FindFirstChild(LocalPlayer.Name .. "Car")
         if bus then
-            -- 2. Entrar no ônibus
+            -- Sentar no ônibus
             pcall(function()
                 hrp.Anchored = true
                 hrp.CFrame = CFrame.new(1171.15, 79.45, -1166.2)
@@ -542,7 +541,7 @@ local function BringBus(target)
             task.wait(0.5)
             if not hum.Sit then return end
             
-            -- 3. Configuração
+            -- Configuração do ônibus
             for _, p in pairs(bus:GetDescendants()) do
                 if p:IsA("BasePart") then
                     p.CanCollide = false
@@ -550,7 +549,7 @@ local function BringBus(target)
                 end
             end
             
-            -- 4. Perseguição com Giro
+            -- Perseguição com Giro de Fling
             local running = true
             local connection
             connection = RunService.Heartbeat:Connect(function()
@@ -562,7 +561,7 @@ local function BringBus(target)
                 local tHRP = target.Character.HumanoidRootPart
                 local tHum = target.Character:FindFirstChildOfClass("Humanoid")
                 
-                -- Giro do Fling
+                -- Giro do Fling Original
                 pcall(function()
                     bus:PivotTo(CFrame.new(tHRP.Position + Vector3.new(math.random(-10,10),0,math.random(-10,10))) * CFrame.Angles(
                         math.rad(game.Workspace.DistributedGameTime*12000),
@@ -580,20 +579,24 @@ local function BringBus(target)
                     end
                 end
                 
-                -- 5. BRING (Manda para a SUA posição)
+                -- BRING (Traz para a sua posição atual)
                 if targetSat then
                     running = false
                     connection:Disconnect()
                     
-                    -- Teleporta o ônibus para onde VOCÊ estava originalmente (ou onde você está agora)
-                    pcall(function() bus:PivotTo(hrp.CFrame) end)
+                    -- Teleporta o ônibus para a sua frente (2 studs à frente)
+                    local myCurrentPos = hrp.CFrame
+                    pcall(function() 
+                        bus:PivotTo(myCurrentPos * CFrame.new(0, 0, -2)) 
+                    end)
                     
-                    task.wait(0.3)
+                    -- Pequena pausa para garantir que o player viajou junto com o ônibus
+                    task.wait(0.1)
                     
-                    -- Deleta o ônibus (o player cai na sua frente)
+                    -- Deleta ônibus e solta o player na sua frente
                     pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
                     
-                    -- Te levanta
+                    -- Garante que você não fique preso
                     pcall(function()
                         hum:ChangeState(Enum.HumanoidStateType.GettingUp)
                     end)
@@ -604,7 +607,6 @@ local function BringBus(target)
         end
     end
 end
-
 
 local function KillVoidBus(target)
     local LocalPlayer = game.Players.LocalPlayer
@@ -5446,6 +5448,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
