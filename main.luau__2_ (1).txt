@@ -114,7 +114,7 @@ Bold=Enum.Font.FredokaOne,
 ExtraBold=Enum.Font.FredokaOne,
 SliderValue=Enum.Font.FredokaOne
 },
-BackgroundTransparency=0.03
+BackgroundTransparency=0.2
 }
 }
 
