@@ -2144,159 +2144,141 @@ MainTab:AddButton({
 })
 
 
--- [[ BOTÃO PARA INTERFACE ]]
 MainTab:AddButton({
-    Name = "Click Kill Couch Tool",
+    Name = "Click Fling Couch",
     Callback = function()
-        local tool = Instance.new("Tool")
-        tool.Name = "Kill Couch Tool"
-        tool.RequiresHandle = false
-        tool.CanBeDropped = false
-        
-        local handle = Instance.new("Part")
-        handle.Name = "Handle"
-        handle.Size = Vector3.new(1, 1, 1)
-        handle.Transparency = 1 
-        handle.Parent = tool
 
-        -- Evento de Ativação (Ao clicar com a ferramenta)
-        tool.Activated:Connect(function()
-            -- Usa o mouse para identificar quem foi clicado
-            local mouse = game.Players.LocalPlayer:GetMouse()
-            local target = mouse.Target
-            
-            if target and target.Parent then
-                -- Verifica se o que foi clicado pertence a um personagem de um jogador
-                local character = target.Parent
-                if not character:FindFirstChild("Humanoid") then
-                    character = target.Parent.Parent -- Tenta subir um nível (acessórios/partes extras)
-                end
-                
-                local targetPlayer = game.Players:GetPlayerFromCharacter(character)
+local jogadores = game:GetService("Players")
+local rep = game:GetService("ReplicatedStorage")
+local entrada = game:GetService("UserInputService")
+local eu = jogadores.LocalPlayer
+local cam = workspace.CurrentCamera
 
-                if targetPlayer and targetPlayer ~= game.Players.LocalPlayer then
-                    Library:Notify({
-                        Title = "Massacre Target",
-                        Content = "Alvo identificado: " .. targetPlayer.DisplayName,
-                        Duration = 3
-                    })
-                    ExecuteMassacreCouch(targetPlayer)
-                else
-                    Library:Notify({
-                        Title = "Erro",
-                        Content = "Clique em um jogador válido!",
-                        Duration = 2
-                    })
-                end
-            end
-        end)
+local podeClicar = true
+local ferramentaEquipada = false
+local NOME_FERRAMENTA = "Click Fling Couch"
 
-        tool.Parent = game.Players.LocalPlayer.Backpack
-        
-        Library:Notify({
-            Title = "Ferramenta Recebida",
-            Content = "Equipe a Tool e clique em um player para matar!",
-            Duration = 4
-        })
-    end
-})
+local mochila = eu:WaitForChild("Backpack")
 
--- [[ FUNÇÃO DE EXECUÇÃO ]]
-function ExecuteMassacreCouch(targetPlayer)
-    if _G.IsTrapping then return end
-    _G.IsTrapping = true
-    
-    local playerChar = LPlayer.Character
-    local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
-    local playerHumanoid = playerChar and playerChar:FindFirstChildOfClass("Humanoid")
-    
-    if not playerHRP or not playerHumanoid then 
-        _G.IsTrapping = false 
-        return 
-    end
-    
-    local originalPos = playerHRP.CFrame
+if not mochila:FindFirstChild(NOME_FERRAMENTA) and not (eu.Character and eu.Character:FindFirstChild(NOME_FERRAMENTA)) then
+	local ferramenta = Instance.new("Tool")
+	ferramenta.Name = NOME_FERRAMENTA
+	ferramenta.RequiresHandle = false
+	ferramenta.CanBeDropped = false
 
-    -- Verifica se o alvo existe e está vivo
-    local targetChar = targetPlayer.Character
-    local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
-    local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+	ferramenta.Equipped:Connect(function()
+		ferramentaEquipada = true
+	end)
 
-    if targetHRP and targetHum and targetHum.Health > 0 then
-        -- 1. Pega o Sofá no Servidor
-        pcall(function()
-            RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
-            task.wait(0.2)
-            RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
-        end)
-        
-        local couch = LPlayer.Backpack:WaitForChild("Couch", 3)
-        if couch then 
-            couch.Parent = playerChar 
-        else
-            _G.IsTrapping = false
-            return
-        end
-        
-        task.wait(0.1)
-        -- Ativa o sofá (Tecla F para spawnar o assento)
-        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        task.wait(0.25)
-        
-        -- 2. Ativa o Fling (Velocidade Infinita)
-        workspace.FallenPartsDestroyHeight = 0/0 -- Previne morrer ao cair do mapa
-        local bodyVel = Instance.new("BodyVelocity")
-        bodyVel.Name = "FlingForce"
-        bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
-        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel.Parent = playerHRP
-        
-        playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-        workspace.CurrentCamera.CameraSubject = targetHRP
-        
-        local rotation = 0
-        local startTime = tick()
-        
-        -- 3. Loop de Massacre (Giro e Colisão)
-        while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 and not targetHum.Sit do
-            if tick() - startTime > 5 then break end -- Limite de 5 segundos por tentativa
-            RunService.Heartbeat:Wait()
-            
-            rotation = rotation + 60
-            -- Cálculo de predição de movimento para não errar o bote
-            local targetPos = targetHRP.Position + (targetHRP.Velocity * 0.2)
-            playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(0, math.rad(rotation), 0)
-            
-            -- Mantém a força de colisão ativa
-            playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
-            playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
-        end
-        
-        -- 4. Limpeza de Forças
-        if bodyVel then bodyVel:Destroy() end
-        playerHumanoid:UnequipTools()
-        pcall(function() RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") end)
-        
-        for _, part in pairs(playerChar:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Velocity = Vector3.zero
-                part.RotVelocity = Vector3.zero
-            end
-        end
-    end
+	ferramenta.Unequipped:Connect(function()
+		ferramentaEquipada = false
+	end)
 
-    -- 5. Finalização e Retorno à Base
-    playerHRP.Anchored = true
-    playerHRP.CFrame = originalPos
-    task.wait(0.2)
-    playerHRP.Velocity = Vector3.zero
-    playerHRP.RotVelocity = Vector3.zero
-    playerHRP.Anchored = false
-    
-    _G.IsTrapping = false
-    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
-    workspace.CurrentCamera.CameraSubject = playerHumanoid
+	ferramenta.Parent = mochila
 end
+
+local function jogarComSofa(alvo)
+	if not ferramentaEquipada then return end
+	if not alvo or not alvo.Character or alvo == eu then return end
+
+	local jogando = true
+	local raiz = eu.Character and eu.Character:FindFirstChild("HumanoidRootPart")
+	local alvoRaiz = alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart")
+	if not raiz or not alvoRaiz then return end
+
+	local boneco = eu.Character
+	local humano = boneco:FindFirstChildOfClass("Humanoid")
+	local posOriginal = raiz.CFrame
+
+	rep:WaitForChild("RE"):WaitForChild("1Clea1rTool1s"):FireServer("ClearAllTools")
+	task.wait(0.2)
+
+	rep.RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "Couch")
+	task.wait(0.3)
+
+	local sofa = eu.Backpack:FindFirstChild("Couch")
+	if sofa then
+		sofa.Parent = boneco
+	end
+	task.wait(0.1)
+
+	game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+	task.wait(0.25)
+
+	workspace.FallenPartsDestroyHeight = 0/0
+
+	local forca = Instance.new("BodyVelocity")
+	forca.Name = "ForcaJogada"
+	forca.Velocity = Vector3.new(9e8, 9e8, 9e8)
+	forca.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	forca.Parent = raiz
+
+	humano:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+	humano.PlatformStand = false
+	cam.CameraSubject = alvo.Character:FindFirstChild("Head") or alvoRaiz or humano
+
+	task.spawn(function()
+		local angulo = 0
+		local partes = {raiz}
+		while jogando and alvo and alvo.Character and alvo.Character:FindFirstChildOfClass("Humanoid") do
+			local alvoHum = alvo.Character:FindFirstChildOfClass("Humanoid")
+			if alvoHum.Sit then break end
+			angulo += 50
+
+			for _, parte in ipairs(partes) do
+				local hrp = alvo.Character.HumanoidRootPart
+				local pos = hrp.Position + hrp.Velocity / 1.5
+				raiz.CFrame = CFrame.new(pos) * CFrame.Angles(math.rad(angulo), 0, 0)
+			end
+
+			raiz.Velocity = Vector3.new(9e8, 9e8, 9e8)
+			raiz.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+			task.wait()
+		end
+
+		jogando = false
+		forca:Destroy()
+		humano:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+		humano.PlatformStand = false
+		raiz.CFrame = posOriginal
+		cam.CameraSubject = humano
+
+		for _, p in pairs(boneco:GetDescendants()) do
+			if p:IsA("BasePart") then
+				p.Velocity = Vector3.zero
+				p.RotVelocity = Vector3.zero
+			end
+		end
+
+		humano:UnequipTools()
+		rep.RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "Couch")
+	end)
+
+	while jogando do
+		task.wait()
+	end
+end
+
+entrada.TouchTap:Connect(function(toques, processado)
+	if processado or not podeClicar or not ferramentaEquipada then return end
+
+	local pos = toques[1]
+	local raio = cam:ScreenPointToRay(pos.X, pos.Y)
+	local acerto = workspace:Raycast(raio.Origin, raio.Direction * 1000)
+
+	if acerto and acerto.Instance then
+		local alvo = jogadores:GetPlayerFromCharacter(acerto.Instance:FindFirstAncestorOfClass("Model"))
+		if alvo and alvo ~= eu then
+			podeClicar = false
+			jogarComSofa(alvo)
+			task.delay(2, function()
+				podeClicar = true
+			end)
+		end
+	end
+end)
+end
+})
                                     
 ProtTab:AddToggle({
     Name = "Anti-Sit",
@@ -5448,6 +5430,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
