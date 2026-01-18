@@ -1467,7 +1467,7 @@ MainTab:AddToggle({
                     
                     -- Espera o fling terminar ou jogador morrer
                     local startTime = tick()
-                    while _G.AutoFlingActive and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 do
+                    while _G.AutoKillActive and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 do
                         if tick() - startTime > 15 then -- Timeout de 15 segundos
                             break
                         end
@@ -5522,6 +5522,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
