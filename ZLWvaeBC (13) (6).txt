@@ -1899,9 +1899,8 @@ MainTab:AddButton({
     end
 })
 
--- [[ CONFIGURAÇÃO DA TOOL - MASSACRE COUCH ]]
 
--- Botão para a sua aba na Wand UI / Redz
+-- [[ BOTÃO PARA INTERFACE ]]
 MainTab:AddButton({
     Name = "Click Kill Couch Tool",
     Callback = function()
@@ -1916,24 +1915,35 @@ MainTab:AddButton({
         handle.Transparency = 1 
         handle.Parent = tool
 
-        -- Evento disparado ao clicar com a ferramenta equipada
+        -- Evento de Ativação (Ao clicar com a ferramenta)
         tool.Activated:Connect(function()
-            local targetName = _G.SelectedPlayer
-            local targetPlayer = game.Players:FindFirstChild(targetName)
+            -- Usa o mouse para identificar quem foi clicado
+            local mouse = game.Players.LocalPlayer:GetMouse()
+            local target = mouse.Target
+            
+            if target and target.Parent then
+                -- Verifica se o que foi clicado pertence a um personagem de um jogador
+                local character = target.Parent
+                if not character:FindFirstChild("Humanoid") then
+                    character = target.Parent.Parent -- Tenta subir um nível (acessórios/partes extras)
+                end
+                
+                local targetPlayer = game.Players:GetPlayerFromCharacter(character)
 
-            if targetPlayer then
-                Library:Notify({
-                    Title = "Massacre",
-                    Content = "A iniciar massacre em: " .. targetPlayer.DisplayName,
-                    Duration = 3
-                })
-                ExecuteMassacreCouch(targetPlayer)
-            else
-                Window:Notify({
-                    Title = "Erro",
-                    Content = "Selecione um alvo válido primeiro!",
-                    Duration = 3
-                })
+                if targetPlayer and targetPlayer ~= game.Players.LocalPlayer then
+                    Library:Notify({
+                        Title = "Massacre Target",
+                        Content = "Alvo identificado: " .. targetPlayer.DisplayName,
+                        Duration = 3
+                    })
+                    ExecuteMassacreCouch(targetPlayer)
+                else
+                    Library:Notify({
+                        Title = "Erro",
+                        Content = "Clique em um jogador válido!",
+                        Duration = 2
+                    })
+                end
             end
         end)
 
@@ -1941,13 +1951,13 @@ MainTab:AddButton({
         
         Library:Notify({
             Title = "Ferramenta Recebida",
-            Content = "Massacre Tool adicionada!",
-            Duration = 3
+            Content = "Equipe a Tool e clique em um player para matar!",
+            Duration = 4
         })
     end
 })
 
--- [[ FUNÇÃO RENOMEADA: ExecuteMassacreCouch ]]
+-- [[ FUNÇÃO DE EXECUÇÃO ]]
 function ExecuteMassacreCouch(targetPlayer)
     if _G.IsTrapping then return end
     _G.IsTrapping = true
@@ -1963,76 +1973,84 @@ function ExecuteMassacreCouch(targetPlayer)
     
     local originalPos = playerHRP.CFrame
 
-    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local targetHRP = targetPlayer.Character.HumanoidRootPart
-        local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+    -- Verifica se o alvo existe e está vivo
+    local targetChar = targetPlayer.Character
+    local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+    local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+
+    if targetHRP and targetHum and targetHum.Health > 0 then
+        -- 1. Pega o Sofá no Servidor
+        pcall(function()
+            RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
+            task.wait(0.2)
+            RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
+        end)
         
-        if targetHum and targetHum.Health > 0 then
-            -- Pega o Sofá no Brookhaven
-            pcall(function()
-                RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
-                task.wait(0.2)
-                RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
-            end)
+        local couch = LPlayer.Backpack:WaitForChild("Couch", 3)
+        if couch then 
+            couch.Parent = playerChar 
+        else
+            _G.IsTrapping = false
+            return
+        end
+        
+        task.wait(0.1)
+        -- Ativa o sofá (Tecla F para spawnar o assento)
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        task.wait(0.25)
+        
+        -- 2. Ativa o Fling (Velocidade Infinita)
+        workspace.FallenPartsDestroyHeight = 0/0 -- Previne morrer ao cair do mapa
+        local bodyVel = Instance.new("BodyVelocity")
+        bodyVel.Name = "FlingForce"
+        bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
+        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel.Parent = playerHRP
+        
+        playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+        workspace.CurrentCamera.CameraSubject = targetHRP
+        
+        local rotation = 0
+        local startTime = tick()
+        
+        -- 3. Loop de Massacre (Giro e Colisão)
+        while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 and not targetHum.Sit do
+            if tick() - startTime > 5 then break end -- Limite de 5 segundos por tentativa
+            RunService.Heartbeat:Wait()
             
-            local couch = LPlayer.Backpack:WaitForChild("Couch", 3)
-            if couch then couch.Parent = playerChar end
+            rotation = rotation + 60
+            -- Cálculo de predição de movimento para não errar o bote
+            local targetPos = targetHRP.Position + (targetHRP.Velocity * 0.2)
+            playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(0, math.rad(rotation), 0)
             
-            task.wait(0.1)
-            -- Ativa o sofá (Tecla F)
-            game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
-            task.wait(0.25)
-            
-            -- Física de Fling Extrema
-            workspace.FallenPartsDestroyHeight = 0/0
-            local bodyVel = Instance.new("BodyVelocity")
-            bodyVel.Name = "FlingForce"
-            bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
-            bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyVel.Parent = playerHRP
-            
-            playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-            workspace.CurrentCamera.CameraSubject = targetPlayer.Character:FindFirstChild("Head") or targetHRP
-            
-            local rotation = 0
-            local startTime = tick()
-            
-            -- Loop de Ataque
-            while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 and not targetHum.Sit do
-                if tick() - startTime > 6 then break end 
-                RunService.Heartbeat:Wait()
-                
-                rotation = rotation + 50
-                local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
-                playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
-                
-                playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
-                playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
-            end
-            
-            -- Limpeza
-            bodyVel:Destroy()
-            playerHumanoid:UnequipTools()
-            pcall(function() RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") end)
-            
-            for _, part in pairs(playerChar:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Velocity = Vector3.zero
-                    part.RotVelocity = Vector3.zero
-                end
+            -- Mantém a força de colisão ativa
+            playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
+            playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
+        end
+        
+        -- 4. Limpeza de Forças
+        if bodyVel then bodyVel:Destroy() end
+        playerHumanoid:UnequipTools()
+        pcall(function() RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") end)
+        
+        for _, part in pairs(playerChar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Velocity = Vector3.zero
+                part.RotVelocity = Vector3.zero
             end
         end
     end
 
-    -- Finalização
-    _G.IsTrapping = false
-    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    -- 5. Finalização e Retorno à Base
     playerHRP.Anchored = true
     playerHRP.CFrame = originalPos
     task.wait(0.2)
     playerHRP.Velocity = Vector3.zero
     playerHRP.RotVelocity = Vector3.zero
     playerHRP.Anchored = false
+    
+    _G.IsTrapping = false
+    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
     workspace.CurrentCamera.CameraSubject = playerHumanoid
 end
                                     
@@ -5186,6 +5204,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
