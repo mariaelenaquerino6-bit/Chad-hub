@@ -1249,7 +1249,7 @@ MainTab:AddButton({
             KillCouch(targetPlayer)
             
         -- Adicionado: Verificação do método para Bus
-        elseif _G.SelectedMethod == "Bus" then
+        elseif _G.SelectedMethod == "School Bus" then
             local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
             if not targetPlayer then 
                 Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
@@ -1297,7 +1297,7 @@ MainTab:AddButton({
             BringCouch(targetPlayer)
             
         -- Adicionado: Verificação para o método Bus
-        elseif _G.SelectedMethod == "Bus" then
+        elseif _G.SelectedMethod == "School Bus" then
             local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
             if not targetPlayer then 
                 Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
@@ -5446,6 +5446,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
