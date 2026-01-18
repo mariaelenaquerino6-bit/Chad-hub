@@ -495,6 +495,117 @@ MainTab:AddDropdown({
     end
 })
 
+
+-- [[ FUNÇÃO BRING BUS ]]
+local function BringBus(target)
+    local LocalPlayer = game.Players.LocalPlayer
+    local RS = game:GetService("ReplicatedStorage")
+    local RunService = game:GetService("RunService")
+
+    if not (target and target.Character and LocalPlayer.Character) then return end
+    
+    local char = LocalPlayer.Character
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    
+    if hrp and hum then
+        local originalPos = hrp.CFrame
+        
+        -- 1. Spawn do Ônibus (Igual ao Fling)
+        pcall(function()
+            hrp.Anchored = true
+            hrp.CFrame = CFrame.new(1181.83, 76.08, -1158.83)
+            task.wait(0.2)
+            hrp.Velocity, hrp.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+            hrp.Anchored = false
+            hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end)
+ 
+        task.wait(0.5)
+        pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
+        pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("PickingCar", "SchoolBus") end)
+ 
+        task.wait(1)
+        
+        local bus = workspace:FindFirstChild("Vehicles") and workspace.Vehicles:FindFirstChild(LocalPlayer.Name .. "Car")
+        if bus then
+            -- 2. Entrar no ônibus
+            pcall(function()
+                hrp.Anchored = true
+                hrp.CFrame = CFrame.new(1171.15, 79.45, -1166.2)
+                task.wait(0.2)
+                hrp.Velocity, hrp.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+                hrp.Anchored = false
+                hum:ChangeState(Enum.HumanoidStateType.Seated)
+            end)
+            
+            task.wait(0.5)
+            if not hum.Sit then return end
+            
+            -- 3. Configuração
+            for _, p in pairs(bus:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.CanCollide = false
+                    pcall(function() p:SetNetworkOwner(nil) end)
+                end
+            end
+            
+            -- 4. Perseguição com Giro
+            local running = true
+            local connection
+            connection = RunService.Heartbeat:Connect(function()
+                if not running or not (target.Character and target.Character:FindFirstChild("HumanoidRootPart")) then
+                    if connection then connection:Disconnect() end
+                    return
+                end
+                
+                local tHRP = target.Character.HumanoidRootPart
+                local tHum = target.Character:FindFirstChildOfClass("Humanoid")
+                
+                -- Giro do Fling
+                pcall(function()
+                    bus:PivotTo(CFrame.new(tHRP.Position + Vector3.new(math.random(-10,10),0,math.random(-10,10))) * CFrame.Angles(
+                        math.rad(game.Workspace.DistributedGameTime*12000),
+                        math.rad(game.Workspace.DistributedGameTime*15000),
+                        math.rad(game.Workspace.DistributedGameTime*18000)
+                    ))
+                end)
+                
+                -- Verificar se o alvo sentou
+                local targetSat = false
+                for _, seat in pairs(bus:GetDescendants()) do
+                    if (seat:IsA("Seat") or seat:IsA("VehicleSeat")) and seat.Name ~= "VehicleSeat" and seat.Occupant == tHum then
+                        targetSat = true
+                        break
+                    end
+                end
+                
+                -- 5. BRING (Manda para a SUA posição)
+                if targetSat then
+                    running = false
+                    connection:Disconnect()
+                    
+                    -- Teleporta o ônibus para onde VOCÊ estava originalmente (ou onde você está agora)
+                    pcall(function() bus:PivotTo(hrp.CFrame) end)
+                    
+                    task.wait(0.3)
+                    
+                    -- Deleta o ônibus (o player cai na sua frente)
+                    pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
+                    
+                    -- Te levanta
+                    pcall(function()
+                        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+                    end)
+                end
+            end)
+            
+            task.delay(15, function() if running then running = false if connection then connection:Disconnect() end end end)
+        end
+    end
+end
+
+
 local function KillVoidBus(target)
     local LocalPlayer = game.Players.LocalPlayer
     local RS = game:GetService("ReplicatedStorage")
@@ -1176,16 +1287,27 @@ MainTab:AddButton({
 MainTab:AddButton({
     Name = "Bring",
     Callback = function()
-        if _G.SelectedMethod ~= "Couch" then
-            Window:Notify({Title = "Erro", Content = "Bring só funciona com Couch!", Duration = 3})
-            return
+        -- Verificação para o método Couch original
+        if _G.SelectedMethod == "Couch" then
+            local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
+            if not targetPlayer then 
+                Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
+                return 
+            end
+            BringCouch(targetPlayer)
+            
+        -- Adicionado: Verificação para o método Bus
+        elseif _G.SelectedMethod == "Bus" then
+            local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
+            if not targetPlayer then 
+                Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
+                return 
+            end
+            BringBus(targetPlayer) -- Chama a função que traz o ônibus até você
+            
+        else
+            Window:Notify({Title = "Erro", Content = "Selecione um método válido!", Duration = 3})
         end
-        local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
-        if not targetPlayer then 
-            Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
-            return 
-        end
-        BringCouch(targetPlayer)
     end
 })
 
@@ -5324,6 +5446,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
