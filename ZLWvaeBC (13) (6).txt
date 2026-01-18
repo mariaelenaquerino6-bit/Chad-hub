@@ -1,4 +1,4 @@
-local Library = loadstring(game:HttpGet("https://gitlab.com/duscordteste/redzlib-v6-chad/-/raw/main/main.luau__2_.txt"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/mariaelenaquerino6-bit/Chad-hub/refs/heads/main/main.luau__2_%20(1).txt"))()
 
 local Window = Library:MakeWindow({
   Title = "Chad Hub V2.0",
@@ -5204,6 +5204,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
