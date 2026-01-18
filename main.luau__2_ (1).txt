@@ -108,11 +108,11 @@ Close="rbxassetid://10709790948"
 }
 },
 Font={
-Normal=Enum.Font.Gotham,
-Medium=Enum.Font.GothamMedium,
-Bold=Enum.Font.GothamBold,
-ExtraBold=Enum.Font.GothamBlack,
-SliderValue=Enum.Font.GothamBold
+Normal=Enum.Font.FredokaOne,
+Medium=Enum.Font.FredokaOne,
+Bold=Enum.Font.FredokaOne,
+ExtraBold=Enum.Font.FredokaOne,
+SliderValue=Enum.Font.FredokaOne
 },
 BackgroundTransparency=0.2
 }
