@@ -1299,7 +1299,7 @@ MainTab:AddButton({
             BringCouch(targetPlayer)
             
         -- Adicionado: Verificação para o método Bus
-        elseif _G.SelectedMethod == "School Bus" then
+        elseif _G.SelectedMethod == "Bus" then
             local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
             if not targetPlayer then 
                 Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
@@ -1403,6 +1403,98 @@ MainTab:AddToggle({
         end
     end
 })
+
+MainTab:AddToggle({
+    Name = "Auto Kill",
+    Default = false,
+    Callback = function(state)
+        _G.AutoKillActive = state
+        
+        if state then
+            -- Verificações iniciais
+            if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
+                return
+            end
+            
+            -- Verifica se o método selecionado é válido para Auto Fling
+            if _G.SelectedMethod == "Boat" then
+                Window:Notify({
+                    Title = "Erro",
+                    Content = "Método Boat não disponível para Auto Kill",
+                    Duration = 3
+                })
+                return
+            end
+            
+            if _G.SelectedMethod == "Ball" then
+                Window:Notify({
+                    Title = "Erro",
+                    Content = "Método Ball não disponível para Auto Fling",
+                    Duration = 3
+                })
+                return
+            end
+            
+            -- Inicia o loop de auto fling
+            task.spawn(function()
+                while _G.AutoFlingActive do
+                    local target = game.Players:FindFirstChild(_G.SelectedPlayer)
+                    
+                    if not target then
+                        break
+                    end
+                    
+                    -- Espera o jogador ter um character válido
+                    local waitCount = 0
+                    while waitCount < 30 and _G.AutoFlingActive do
+                        if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character.Humanoid.Health > 0 then
+                            break
+                        end
+                        task.wait(1)
+                        waitCount = waitCount + 1
+                    end
+                    
+                    if not _G.AutoFlingActive then break end
+                    
+                    -- Executa o método selecionado
+                    if _G.SelectedMethod == "School Bus" then
+                        KillVoidBus(targetPlayer)
+                    elseif _G.SelectedMethod == "Couch" then
+                        KillCouch(targetPlayer)
+                    else
+                        break
+                    end
+                    
+                    -- Espera o fling terminar ou jogador morrer
+                    local startTime = tick()
+                    while _G.AutoFlingActive and target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 do
+                        if tick() - startTime > 15 then -- Timeout de 15 segundos
+                            break
+                        end
+                        task.wait(0.5)
+                    end
+                    
+                    if not _G.AutoKillActive then break end
+                    
+                    -- Espera o respawn (se morreu)
+                    if target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health <= 0 then
+                        local respawnTime = 0
+                        while _G.AutoFlingActive and respawnTime < 30 do
+                            if target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 then
+                                break
+                            end
+                            task.wait(1)
+                            respawnTime = respawnTime + 1
+                        end
+                    end
+                    
+                    task.wait(2) -- Intervalo entre execuções
+                end
+            end)
+        end
+    end
+})
+
 
 
 MainTab:AddSection("Methods All")
@@ -5430,6 +5522,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
