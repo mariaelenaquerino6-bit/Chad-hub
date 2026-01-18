@@ -1437,7 +1437,7 @@ MainTab:AddToggle({
             
             -- Inicia o loop de auto fling
             task.spawn(function()
-                while _G.AutoFlingActive do
+                while _G.AutoKillActive do
                     local target = game.Players:FindFirstChild(_G.SelectedPlayer)
                     
                     if not target then
@@ -1446,7 +1446,7 @@ MainTab:AddToggle({
                     
                     -- Espera o jogador ter um character válido
                     local waitCount = 0
-                    while waitCount < 30 and _G.AutoFlingActive do
+                    while waitCount < 30 and _G.AutoKillActive do
                         if target.Character and target.Character:FindFirstChild("HumanoidRootPart") and target.Character.Humanoid.Health > 0 then
                             break
                         end
@@ -5522,6 +5522,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
