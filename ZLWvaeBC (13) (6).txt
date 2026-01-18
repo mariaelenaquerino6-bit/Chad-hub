@@ -1898,6 +1898,143 @@ MainTab:AddButton({
         GiveFlingTool()
     end
 })
+
+-- [[ CONFIGURAÇÃO DA TOOL - MASSACRE COUCH ]]
+
+-- Botão para a sua aba na Wand UI / Redz
+MainTab:AddButton({
+    Name = "Click Kill Couch Tool",
+    Callback = function()
+        local tool = Instance.new("Tool")
+        tool.Name = "Kill Couch Tool"
+        tool.RequiresHandle = false
+        tool.CanBeDropped = false
+        
+        local handle = Instance.new("Part")
+        handle.Name = "Handle"
+        handle.Size = Vector3.new(1, 1, 1)
+        handle.Transparency = 1 
+        handle.Parent = tool
+
+        -- Evento disparado ao clicar com a ferramenta equipada
+        tool.Activated:Connect(function()
+            local targetName = _G.SelectedPlayer
+            local targetPlayer = game.Players:FindFirstChild(targetName)
+
+            if targetPlayer then
+                Library:Notify({
+                    Title = "Massacre",
+                    Content = "A iniciar massacre em: " .. targetPlayer.DisplayName,
+                    Duration = 3
+                })
+                ExecuteMassacreCouch(targetPlayer)
+            else
+                Window:Notify({
+                    Title = "Erro",
+                    Content = "Selecione um alvo válido primeiro!",
+                    Duration = 3
+                })
+            end
+        end)
+
+        tool.Parent = game.Players.LocalPlayer.Backpack
+        
+        Library:Notify({
+            Title = "Ferramenta Recebida",
+            Content = "Massacre Tool adicionada!",
+            Duration = 3
+        })
+    end
+})
+
+-- [[ FUNÇÃO RENOMEADA: ExecuteMassacreCouch ]]
+function ExecuteMassacreCouch(targetPlayer)
+    if _G.IsTrapping then return end
+    _G.IsTrapping = true
+    
+    local playerChar = LPlayer.Character
+    local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
+    local playerHumanoid = playerChar and playerChar:FindFirstChildOfClass("Humanoid")
+    
+    if not playerHRP or not playerHumanoid then 
+        _G.IsTrapping = false 
+        return 
+    end
+    
+    local originalPos = playerHRP.CFrame
+
+    if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetHRP = targetPlayer.Character.HumanoidRootPart
+        local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+        
+        if targetHum and targetHum.Health > 0 then
+            -- Pega o Sofá no Brookhaven
+            pcall(function()
+                RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
+                task.wait(0.2)
+                RS.RE["1Too1l"]:InvokeServer("PickingTools", "Couch")
+            end)
+            
+            local couch = LPlayer.Backpack:WaitForChild("Couch", 3)
+            if couch then couch.Parent = playerChar end
+            
+            task.wait(0.1)
+            -- Ativa o sofá (Tecla F)
+            game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+            task.wait(0.25)
+            
+            -- Física de Fling Extrema
+            workspace.FallenPartsDestroyHeight = 0/0
+            local bodyVel = Instance.new("BodyVelocity")
+            bodyVel.Name = "FlingForce"
+            bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
+            bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bodyVel.Parent = playerHRP
+            
+            playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+            workspace.CurrentCamera.CameraSubject = targetPlayer.Character:FindFirstChild("Head") or targetHRP
+            
+            local rotation = 0
+            local startTime = tick()
+            
+            -- Loop de Ataque
+            while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 and not targetHum.Sit do
+                if tick() - startTime > 6 then break end 
+                RunService.Heartbeat:Wait()
+                
+                rotation = rotation + 50
+                local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
+                playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
+                
+                playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
+                playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
+            end
+            
+            -- Limpeza
+            bodyVel:Destroy()
+            playerHumanoid:UnequipTools()
+            pcall(function() RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") end)
+            
+            for _, part in pairs(playerChar:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Velocity = Vector3.zero
+                    part.RotVelocity = Vector3.zero
+                end
+            end
+        end
+    end
+
+    -- Finalização
+    _G.IsTrapping = false
+    playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    playerHRP.Anchored = true
+    playerHRP.CFrame = originalPos
+    task.wait(0.2)
+    playerHRP.Velocity = Vector3.zero
+    playerHRP.RotVelocity = Vector3.zero
+    playerHRP.Anchored = false
+    workspace.CurrentCamera.CameraSubject = playerHumanoid
+end
                                     
 ProtTab:AddToggle({
     Name = "Anti-Sit",
@@ -5049,6 +5186,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
