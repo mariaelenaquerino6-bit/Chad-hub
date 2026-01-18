@@ -1454,7 +1454,7 @@ MainTab:AddToggle({
                         waitCount = waitCount + 1
                     end
                     
-                    if not _G.AutoFlingActive then break end
+                    if not _G.AutoKillActive then break end
                     
                     -- Executa o método selecionado
                     if _G.SelectedMethod == "School Bus" then
@@ -5522,6 +5522,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
