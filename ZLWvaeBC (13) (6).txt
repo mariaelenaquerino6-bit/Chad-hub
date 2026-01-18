@@ -495,6 +495,115 @@ MainTab:AddDropdown({
     end
 })
 
+local function KillVoidBus(target)
+    local LocalPlayer = game.Players.LocalPlayer
+    local RS = game:GetService("ReplicatedStorage")
+    local RunService = game:GetService("RunService")
+
+    if not (target and target.Character and LocalPlayer.Character) then return end
+    
+    local char = LocalPlayer.Character
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    
+    if hrp and hum then
+        local originalPos = hrp.CFrame
+        
+        -- Spawn do Ônibus (Método Fling Original)
+        pcall(function()
+            hrp.Anchored = true
+            hrp.CFrame = CFrame.new(1181.83, 76.08, -1158.83)
+            task.wait(0.2)
+            hrp.Velocity, hrp.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+            hrp.Anchored = false
+            hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end)
+ 
+        task.wait(0.5)
+        pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
+        pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("PickingCar", "SchoolBus") end)
+ 
+        task.wait(1)
+        
+        local bus = workspace:FindFirstChild("Vehicles") and workspace.Vehicles:FindFirstChild(LocalPlayer.Name .. "Car")
+        if bus then
+            -- Sentar no ônibus
+            pcall(function()
+                hrp.Anchored = true
+                hrp.CFrame = CFrame.new(1171.15, 79.45, -1166.2)
+                task.wait(0.2)
+                hrp.Velocity, hrp.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+                hrp.Anchored = false
+                hum:ChangeState(Enum.HumanoidStateType.Seated)
+            end)
+            
+            task.wait(0.5)
+            if not hum.Sit then return end
+            
+            -- Configuração do ônibus
+            for _, p in pairs(bus:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.CanCollide = false
+                    pcall(function() p:SetNetworkOwner(nil) end)
+                end
+            end
+            
+            -- Perseguição com Giro de Fling
+            local running = true
+            local connection
+            connection = RunService.Heartbeat:Connect(function()
+                if not running or not (target.Character and target.Character:FindFirstChild("HumanoidRootPart")) then
+                    if connection then connection:Disconnect() end
+                    return
+                end
+                
+                local tHRP = target.Character.HumanoidRootPart
+                local tHum = target.Character:FindFirstChildOfClass("Humanoid")
+                
+                -- Giro do Fling Original
+                pcall(function()
+                    bus:PivotTo(CFrame.new(tHRP.Position + Vector3.new(math.random(-10,10),0,math.random(-10,10))) * CFrame.Angles(
+                        math.rad(game.Workspace.DistributedGameTime*12000),
+                        math.rad(game.Workspace.DistributedGameTime*15000),
+                        math.rad(game.Workspace.DistributedGameTime*18000)
+                    ))
+                end)
+                
+                -- Verificar se o alvo sentou
+                local targetSat = false
+                for _, seat in pairs(bus:GetDescendants()) do
+                    if (seat:IsA("Seat") or seat:IsA("VehicleSeat")) and seat.Name ~= "VehicleSeat" and seat.Occupant == tHum then
+                        targetSat = true
+                        break
+                    end
+                end
+                
+                -- KILL VOID (Teleporta para -450 antes de morrer)
+                if targetSat then
+                    running = false
+                    connection:Disconnect()
+                    
+                    pcall(function() bus:PivotTo(CFrame.new(tHRP.Position.X, -450, tHRP.Position.Z)) end)
+                    task.wait(0.3)
+                    
+                    pcall(function() RS:WaitForChild("RE"):WaitForChild("1Ca1r"):FireServer("DeleteAllVehicles") end)
+                    
+                    pcall(function()
+                        hrp.Anchored = true
+                        hrp.CFrame = originalPos
+                        task.wait(0.2)
+                        hrp.Velocity, hrp.RotVelocity = Vector3.new(0,0,0), Vector3.new(0,0,0)
+                        hrp.Anchored = false
+                        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+                    end)
+                end
+            end)
+            
+            task.delay(15, function() if running then running = false if connection then connection:Disconnect() end end end)
+        end
+    end
+end
+
 -- Função para Kill Couch
 local function KillCouch(targetPlayer)
     if _G.IsTrapping then return end
@@ -1019,16 +1128,27 @@ end
 MainTab:AddButton({
     Name = "Kill",
     Callback = function()
-        if _G.SelectedMethod ~= "Couch" then
-            Window:Notify({Title = "Erro", Content = "Método Kill só funciona com Couch!", Duration = 3})
-            return
+        -- Verificação do método para Couch
+        if _G.SelectedMethod == "Couch" then
+            local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
+            if not targetPlayer then 
+                Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
+                return 
+            end
+            KillCouch(targetPlayer)
+            
+        -- Adicionado: Verificação do método para Bus
+        elseif _G.SelectedMethod == "Bus" then
+            local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
+            if not targetPlayer then 
+                Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
+                return 
+            end
+            KillVoidBus(targetPlayer) -- Chama a função do ônibus adaptada
+            
+        else
+            Window:Notify({Title = "Erro", Content = "Selecione um método válido!", Duration = 3})
         end
-        local targetPlayer = game.Players:FindFirstChild(_G.SelectedPlayer)
-        if not targetPlayer then 
-            Window:Notify({Title = "Erro", Content = "Nenhum jogador selecionado!", Duration = 3})
-            return 
-        end
-        KillCouch(targetPlayer)
     end
 })
 
@@ -5204,6 +5324,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
