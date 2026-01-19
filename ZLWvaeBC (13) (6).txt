@@ -2360,7 +2360,7 @@ end
 task.spawn(SetupPortasCorpo)
 
 -- [[ INTEGRANDO NA SUA CHAD LIB ]]
-Troll:AddToggle({
+MainTab:AddToggle({
     Name = "Touch Fling Portas",
     Description = "Recomendo Chegar Perto Das Portas",
     Default = false,
@@ -5472,6 +5472,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
