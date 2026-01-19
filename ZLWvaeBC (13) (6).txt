@@ -2279,6 +2279,108 @@ entrada.TouchTap:Connect(function(toques, processado)
 end)
 end
 })
+
+local FlingConfig = {
+    Enabled = false,
+    Portas = {},
+    Conexao = nil
+}
+
+local function SetupPortasCorpo()
+    local Players = game:GetService("Players")
+    local Workspace = game:GetService("Workspace")
+    local RunService = game:GetService("RunService")
+    
+    local LocalPlayer = Players.LocalPlayer
+    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local HRP = Character:WaitForChild("HumanoidRootPart")
+
+    -- Attachment fixo no seu corpo para as portas "colarem"
+    local BodyAttachment = Instance.new("Attachment", HRP)
+    BodyAttachment.Name = "PortasBodyAttachment"
+
+    local function PrepararPorta(part)
+        if not part:IsA("BasePart") or part.Anchored or not string.find(part.Name, "Door") then return end
+        if part:FindFirstChild("WandBody_Attached") then return end
+
+        -- Configuração de Física
+        part.CanCollide = false -- Para não te travar, mas a velocidade vai flingar o outro
+        local marker = Instance.new("BoolValue", part)
+        marker.Name = "WandBody_Attached"
+
+        local a1 = Instance.new("Attachment", part)
+
+        -- Alinhamento Rígido ao seu corpo
+        local align = Instance.new("AlignPosition", part)
+        align.Attachment0 = a1
+        align.Attachment1 = BodyAttachment
+        align.MaxForce = 1e20 -- Força infinita para não descolar de você
+        align.MaxVelocity = math.huge
+        align.Responsiveness = 200 -- Deixa as portas "firmes" no seu corpo
+        
+        -- Torque para dar o efeito de rotação agressiva (ajuda no fling)
+        local torque = Instance.new("Torque", part)
+        torque.Attachment0 = a1
+        torque.RelativeTo = Enum.ActuatorRelativeTo.World
+        torque.Torque = Vector3.new(math.random(-1e8, 1e8), math.random(-1e8, 1e8), math.random(-1e8, 1e8))
+
+        table.insert(FlingConfig.Portas, {Part = part, Align = align, Torque = torque})
+    end
+
+    -- Escanear portas do mapa
+    for _, obj in ipairs(Workspace:GetDescendants()) do PrepararPorta(obj) end
+    Workspace.DescendantAdded:Connect(PrepararPorta)
+
+    -- Loop de verificação de estado
+    FlingConfig.Conexao = RunService.Heartbeat:Connect(function()
+        if not FlingConfig.Enabled or not HRP.Parent then
+            -- Se desligado, manda as portas para longe
+            for _, data in ipairs(FlingConfig.Portas) do
+                data.Align.Enabled = false
+                data.Torque.Enabled = false
+            end
+            return
+        end
+
+        -- Mantém as portas ativas e coladas
+        for _, data in ipairs(FlingConfig.Portas) do
+            data.Align.Enabled = true
+            data.Torque.Enabled = true
+            
+            -- Se a porta por algum motivo bugar a colisão, forçamos cancollide false com você
+            data.Part.CanCollide = false 
+            
+            -- Aumentar a velocidade angular para o fling ser mais forte no toque
+            data.Torque.Torque = Vector3.new(math.random(-1e9, 1e9), math.random(-1e9, 1e9), math.random(-1e9, 1e9))
+        end
+    end)
+end
+
+-- Inicia o sistema
+task.spawn(SetupPortasCorpo)
+
+-- [[ INTEGRANDO NA SUA CHAD LIB ]]
+Troll:AddToggle({
+    Name = "Touch Fling Portas",
+    Description = "Recomendo Chegar Perto Das Portas",
+    Default = false,
+    Callback = function(Value)
+        FlingConfig.Enabled = Value
+        if Value then
+            Window:Notify({
+                Title = "Wand UI",
+                Content = "Portas equipadas! Encoste em alguém para flingar.",
+                Duration = 3
+            })
+        else
+            -- Reseta as portas ao desligar
+            for _, data in ipairs(FlingConfig.Portas) do
+                data.Part.Velocity = Vector3.new(0,0,0)
+                data.Part.RotVelocity = Vector3.new(0,0,0)
+            end
+        end
+    end
+})
                                     
 ProtTab:AddToggle({
     Name = "Anti-Sit",
@@ -5370,6 +5472,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
     end)
 end)
+
 
 
 
