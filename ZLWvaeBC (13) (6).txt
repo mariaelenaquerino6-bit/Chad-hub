@@ -5568,20 +5568,21 @@ task.spawn(function()
         local RE = game:GetService("ReplicatedStorage"):WaitForChild("RE", 9e9)
         
         -- Configura o Nome (Cor Azul Escuro conforme solicitado)
-        RE:WaitForChild("1RPNam1eTex1t", 9e9):FireServer("RolePlayName", "Chad Hub User")
+        RE:WaitForChild("1RPNam1eTex1t", 9e9):FireServer("RolePlayName", "Chad Hub V2")
         task.wait(0.5)
-        RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPNameColor", Color3.fromRGB(173, 216, 230))
+        RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPNameColor", Color3.fromRGB(138, 0, 196))
         
         -- Configura a Bio (Cor Preta)
         task.wait(0.2)
         local argsBio = {
             [1] = "RolePlayBio",
-            [2] = "Hello " .. lp.Name .. "!"
+            [2] = "By Bolsonaro_Jair7"
         }
         RE:WaitForChild("1RPNam1eTex1t", 9e9):FireServer(unpack(argsBio))
-        RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(0, 0, 0))
+        RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
