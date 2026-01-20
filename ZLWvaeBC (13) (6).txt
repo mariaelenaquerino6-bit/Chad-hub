@@ -209,7 +209,6 @@ local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game.Players
 local Remotes = RS:WaitForChild("RE")
 local TextChatService = game:GetService("TextChatService")
 local TweenService = game:GetService("TweenService")
@@ -235,6 +234,7 @@ _G.SelectedFling = "Fling School Bus"
 _G.SelectedAvatarPlayer = "nil"
 _G.RGBFlash = false
 _G.SelectedMethod = "Couch"
+_G.CameraLocked = false
 
 -- [[ FUNÇÕES ORIGINAIS ]]
 local function To(x, y, z, localName)
@@ -623,9 +623,6 @@ MainTab:AddButton({
 -- [[ VIEW PLAYER COM ATUALIZAÇÃO AUTOMÁTICA ]] --
 local viewPlayerToggle = false
 local currentViewedPlayer = nil
-
--- 🔒 trava simples para impedir outros sistemas de roubar a câmera
-_G.CameraLocked = false
 
 MainTab:AddToggle({
     Name = "View Player",
@@ -5993,6 +5990,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
