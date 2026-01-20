@@ -2768,11 +2768,11 @@ local function ApplyVehicleCollision(vehicle)
     end
 end
 
--- [[ VARIÃVEIS PARA A FUNÇÃO]]
+-- [[ VARIAVEIS PARA A FUNÇÃO]]
 local NoDoorCollision = false
 local ConnectionNoClip
 
--- [[ FUNÃ‡ÃƒO DE TOGGLE ]]
+-- [[ FUNÇÃO DE TOGGLE ]]
 ProtTab:AddToggle({
     Title = "Anti Fling Portas",
     Default = false,
@@ -5776,6 +5776,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
