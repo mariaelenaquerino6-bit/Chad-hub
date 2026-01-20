@@ -927,16 +927,17 @@ local function KillCouch(targetPlayer)
     local playerHRP = playerChar and playerChar:FindFirstChild("HumanoidRootPart")
     local playerHumanoid = playerChar and playerChar:FindFirstChildOfClass("Humanoid")
     
-    if not playerHRP or not playerHumanoid then _G.IsTrapping = false return end
+    if not playerHRP or not playerHumanoid then 
+        _G.IsTrapping = false 
+        return 
+    end
     
-    local originalPos = playerHRP.CFrame -- Salva posição original
+    local originalPos = playerHRP.CFrame
 
-    -- Seleciona quem vai morrer
     local targets = {}
     local t = Players:FindFirstChild(_G.SelectedPlayer)
     if t then table.insert(targets, t) end
 
-    -- Inicia o Massacre
     for _, targetPlayer in ipairs(targets) do
         if not _G.IsTrapping then break end
         
@@ -945,7 +946,6 @@ local function KillCouch(targetPlayer)
             local targetHum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
             
             if targetHum and not targetHum.Sit and targetHum.Health > 0 then
-                -- Pega o Sofá
                 pcall(function()
                     RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
                     task.wait(0.2)
@@ -960,37 +960,41 @@ local function KillCouch(targetPlayer)
                 game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
                 task.wait(0.25)
                 
-                -- Física de Fling
                 workspace.FallenPartsDestroyHeight = 0/0
                 local bodyVel = Instance.new("BodyVelocity")
                 bodyVel.Name = "FlingForce"
-                bodyVel.Velocity = Vector3.new(900000000, 900000000, 900000000)
+                bodyVel.Velocity = Vector3.new(9e8, 9e8, 9e8)
                 bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
                 bodyVel.Parent = playerHRP
                 
                 playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
-                workspace.CurrentCamera.CameraSubject = targetPlayer.Character:FindFirstChild("Head") or targetHRP
+
+                -- 🔒 PROTEÇÃO DE CÂMERA
+                if not _G.CameraLocked then
+                    workspace.CurrentCamera.CameraSubject =
+                        targetPlayer.Character:FindFirstChild("Head") or targetHRP
+                end
                 
                 local rotation = 0
                 local startTime = tick()
                 
-                -- Loop de ataque no alvo atual
                 while _G.IsTrapping and targetPlayer.Parent and targetHum.Health > 0 and not targetHum.Sit do
-                    if tick() - startTime > 6 then break end -- 6 segundos por alvo
+                    if tick() - startTime > 6 then break end
                     RunService.Heartbeat:Wait()
                     
-                    rotation = rotation + 50
+                    rotation += 50
                     local targetPos = targetHRP.Position + targetHRP.Velocity / 1.5
                     playerHRP.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(rotation), 0, 0)
                     
-                    playerHRP.Velocity = Vector3.new(900000000, 900000000, 900000000)
-                    playerHRP.RotVelocity = Vector3.new(900000000, 900000000, 900000000)
+                    playerHRP.Velocity = Vector3.new(9e8, 9e8, 9e8)
+                    playerHRP.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
                 end
                 
-                -- Limpeza rápida para o próximo alvo
                 bodyVel:Destroy()
                 playerHumanoid:UnequipTools()
-                pcall(function() RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools") end)
+                pcall(function()
+                    RS.RE["1Clea1rTool1s"]:FireServer("ClearAllTools")
+                end)
                 
                 for _, part in pairs(playerChar:GetDescendants()) do
                     if part:IsA("BasePart") then
@@ -1002,7 +1006,6 @@ local function KillCouch(targetPlayer)
         end
     end
 
-    -- Finalização Total
     _G.IsTrapping = false
     playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
     playerHRP.Anchored = true
@@ -1011,9 +1014,12 @@ local function KillCouch(targetPlayer)
     playerHRP.Velocity = Vector3.zero
     playerHRP.RotVelocity = Vector3.zero
     playerHRP.Anchored = false
-    workspace.CurrentCamera.CameraSubject = playerHumanoid
-end
 
+    -- 🔒 FINALIZAÇÃO SEGURA
+    if not _G.CameraLocked then
+        workspace.CurrentCamera.CameraSubject = playerHumanoid
+    end
+end
 
 -- Função para Fling School Bus
 local function FlingSchoolBus(targetPlayer)
@@ -1242,7 +1248,8 @@ local function FlingBoat(targetPlayer)
     end)
 end
 
--- Função Fling Ball (já existe no script)
+
+-- Função Fling Ball (corrigida)
 local function FlingBall(target)
     local players = game:GetService("Players")
     local player = players.LocalPlayer
@@ -1257,7 +1264,8 @@ local function FlingBall(target)
  
     local function GetBall()
         if not backpack:FindFirstChild("SoccerBall") and not character:FindFirstChild("SoccerBall") then
-            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+            game:GetService("ReplicatedStorage").RE
+                :FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
         end
  
         local tool = backpack:WaitForChild("SoccerBall", 5) or character:FindFirstChild("SoccerBall")
@@ -1266,7 +1274,7 @@ local function FlingBall(target)
         tool.Parent = character
  
         local ballName = "Soccer" .. player.Name
-        local foundBall = nil
+        local foundBall
         local timeout = tick()
  
         repeat 
@@ -1279,13 +1287,9 @@ local function FlingBall(target)
     end
  
     local Ball = ServerBalls:FindFirstChild("Soccer" .. player.Name) or GetBall()
+    if not Ball then warn("Não foi possível obter a bola.") return end
  
-    if not Ball then 
-        warn("Não foi possível obter a bola.") 
-        return 
-    end
- 
-    -- FÍSICA MELHORADA PARA IMPACTO
+    -- FÍSICA
     Ball.CanCollide = false
     Ball.Massless = true
     Ball.CustomPhysicalProperties = PhysicalProperties.new(100, 0, 0, 100, 100)
@@ -1297,7 +1301,9 @@ local function FlingBall(target)
             local thum = tchar.Humanoid
  
             for _, v in pairs(Ball:GetChildren()) do
-                if v:IsA("BodyVelocity") or v:IsA("BodyForce") or v:IsA("BodyAngularVelocity") then v:Destroy() end
+                if v:IsA("BodyVelocity") or v:IsA("BodyForce") or v:IsA("BodyAngularVelocity") then
+                    v:Destroy()
+                end
             end
  
             local bv = Instance.new("BodyVelocity")
@@ -1307,20 +1313,25 @@ local function FlingBall(target)
             bv.P = 9e9
             bv.Parent = Ball
             
-            -- ROTAÇÃO BRUTAL (O SEGREDO DO FLING)
             Ball.RotVelocity = Vector3.new(10000, 10000, 10000)
  
-            workspace.CurrentCamera.CameraSubject = thum
+            -- 🔒 PROTEÇÃO DE CÂMERA (LIGA)
+            if not _G.CameraLocked then
+                workspace.CurrentCamera.CameraSubject = thum
+            end
  
             local connection
             connection = game:GetService("RunService").Heartbeat:Connect(function()
                 if not Ball or not Ball.Parent or not troot or not troot.Parent or thum.Health <= 0 then
                     connection:Disconnect()
-                    workspace.CurrentCamera.CameraSubject = humanoid
+                    
+                    -- 🔒 PROTEÇÃO DE CÂMERA (DESLIGA)
+                    if not _G.CameraLocked then
+                        workspace.CurrentCamera.CameraSubject = humanoid
+                    end
                     return
                 end
  
-                -- PREDIÇÃO DE MOVIMENTO (MELHORADO PARA CARROS)
                 if troot.Velocity.Magnitude > 0.1 then
                     local Prediction = troot.Velocity * 0.12
                     Ball.CFrame = CFrame.new(troot.Position + Prediction)
@@ -1328,7 +1339,6 @@ local function FlingBall(target)
                     Ball.CFrame = troot.CFrame
                 end
                 
-                -- MANTÉM O GIRO CONSTANTE
                 Ball.RotVelocity = Vector3.new(10000, 10000, 10000)
             end)
  
@@ -1338,7 +1348,6 @@ local function FlingBall(target)
         end
     end
 end
-
 
 -- [[ FUNÇÃO BRING COUCH - SERVER POSITION FIX ]]
 local function BringCouch(targetPlayer)
@@ -1852,80 +1861,97 @@ MainTab:AddButton({
 
 print("Kill All Bus button created")
 
+
 MainTab:AddButton({
     Name = "Fling Ball all",
     Callback = function()
-local player=game:GetService("Players").LocalPlayer
-local SoccerBalls=workspace.WorkspaceCom["001_SoccerBalls"]
-local MyBall=SoccerBalls:FindFirstChild("Soccer"..player.Name)
+
+local player = game:GetService("Players").LocalPlayer
+local SoccerBalls = workspace.WorkspaceCom["001_SoccerBalls"]
+local MyBall = SoccerBalls:FindFirstChild("Soccer"..player.Name)
 
 if not MyBall then
-if not player.Backpack:FindFirstChild("SoccerBall") then
-local args={[1]="PickingTools",[2]="SoccerBall"}
-game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer(unpack(args))
-task.wait()
-player.Backpack.SoccerBall.Parent=player.Character
-repeat MyBall=SoccerBalls:FindFirstChild("Soccer"..player.Name) task.wait() until MyBall
-player.Character.SoccerBall.Parent=player.Backpack
-task.wait()
-else
-player.Backpack.SoccerBall.Parent=player.Character
-repeat MyBall=SoccerBalls:FindFirstChild("Soccer"..player.Name) task.wait() until MyBall
-player.Character.SoccerBall.Parent=player.Backpack
-end
-end
-
-
-for i,v in pairs(game.Players:GetPlayers()) do
-if v~=game.Players.LocalPlayer then
-local target=v
-local TCharacter=target.Character or target.CharacterAdded:Wait()
-local THumanoidRootPart=TCharacter:WaitForChild("HumanoidRootPart")
-if not MyBall or not THumanoidRootPart then return end
-
-for _,v in pairs(MyBall:GetChildren()) do
-if v:IsA("BodyMover") then v:Destroy() end
+    if not player.Backpack:FindFirstChild("SoccerBall") then
+        local args = {"PickingTools","SoccerBall"}
+        game:GetService("ReplicatedStorage").RE
+            :FindFirstChild("1Too1l"):InvokeServer(unpack(args))
+        task.wait()
+        player.Backpack.SoccerBall.Parent = player.Character
+        repeat
+            MyBall = SoccerBalls:FindFirstChild("Soccer"..player.Name)
+            task.wait()
+        until MyBall
+        player.Character.SoccerBall.Parent = player.Backpack
+        task.wait()
+    else
+        player.Backpack.SoccerBall.Parent = player.Character
+        repeat
+            MyBall = SoccerBalls:FindFirstChild("Soccer"..player.Name)
+            task.wait()
+        until MyBall
+        player.Character.SoccerBall.Parent = player.Backpack
+    end
 end
 
-local bodyVelocity=Instance.new("BodyVelocity")
-bodyVelocity.Velocity=Vector3.new(9e8,9e8,9e8)
-bodyVelocity.MaxForce=Vector3.new(1/0,1/0,1/0)
-bodyVelocity.P=1e10
-bodyVelocity.Parent=MyBall
+for _,v in pairs(game.Players:GetPlayers()) do
+    if v ~= player then
+        local target = v
+        local TCharacter = target.Character or target.CharacterAdded:Wait()
+        local THumanoidRootPart = TCharacter:WaitForChild("HumanoidRootPart")
+        if not MyBall or not THumanoidRootPart then return end
 
-local bv=Instance.new("BodyVelocity")
-bv.Velocity=Vector3.new(9e8,9e8,9e8)
-bv.MaxForce=Vector3.new(1/0,1/0,1/0)
-bv.P=1e9
-bv.Parent=THumanoidRootPart
+        for _,b in pairs(MyBall:GetChildren()) do
+            if b:IsA("BodyMover") then b:Destroy() end
+        end
 
-local oldPos=THumanoidRootPart.Position
-workspace.CurrentCamera.CameraSubject=THumanoidRootPart
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Velocity = Vector3.new(9e8,9e8,9e8)
+        bodyVelocity.MaxForce = Vector3.new(1/0,1/0,1/0)
+        bodyVelocity.P = 1e10
+        bodyVelocity.Parent = MyBall
 
-repeat
-local velocity=THumanoidRootPart.Velocity.Magnitude
-local parts={}
-for _,v in pairs(TCharacter:GetDescendants()) do
-if v:IsA("BasePart") and v.CanCollide and not v.Anchored then table.insert(parts,v) end
+        local bv = Instance.new("BodyVelocity")
+        bv.Velocity = Vector3.new(9e8,9e8,9e8)
+        bv.MaxForce = Vector3.new(1/0,1/0,1/0)
+        bv.P = 1e9
+        bv.Parent = THumanoidRootPart
+
+        -- 🔒 PROTEÇÃO DE CÂMERA (LIGA)
+        if not _G.CameraLocked then
+            workspace.CurrentCamera.CameraSubject = THumanoidRootPart
+        end
+
+        repeat
+            local parts = {}
+            for _,p in pairs(TCharacter:GetDescendants()) do
+                if p:IsA("BasePart") and p.CanCollide and not p.Anchored then
+                    table.insert(parts,p)
+                end
+            end
+
+            for _,part in ipairs(parts) do
+                local hrp = target.Character.HumanoidRootPart
+                local pos = hrp.Position + (hrp.Velocity / 1.5)
+                MyBall.CFrame = CFrame.new(pos)
+                task.wait(1/6000)
+            end
+
+            task.wait(1/6000)
+        until THumanoidRootPart.Velocity.Magnitude > 5000
+           or TCharacter.Humanoid.Health == 0
+           or target.Parent ~= game.Players
+           or THumanoidRootPart.Parent ~= TCharacter
+           or TCharacter ~= target.Character
+    end
 end
-for _,part in ipairs(parts) do
-local pos_x=target.Character.HumanoidRootPart.Position.X
-local pos_y=target.Character.HumanoidRootPart.Position.Y
-local pos_z=target.Character.HumanoidRootPart.Position.Z
-pos_x=pos_x+(target.Character.HumanoidRootPart.Velocity.X/1.5)
-pos_y=pos_y+(target.Character.HumanoidRootPart.Velocity.Y/1.5)
-pos_z=pos_z+(target.Character.HumanoidRootPart.Velocity.Z/1.5)
-MyBall.CFrame=CFrame.new(pos_x,pos_y,pos_z)
-task.wait(1/6000)
+
+-- 🔒 PROTEÇÃO DE CÂMERA (DESLIGA)
+if not _G.CameraLocked then
+    workspace.CurrentCamera.CameraSubject =
+        game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
 end
-task.wait(1/6000)
-until THumanoidRootPart.Velocity.Magnitude>5000 or TCharacter.Humanoid.Health==0 or target.Parent~=game.Players or THumanoidRootPart.Parent~=TCharacter or TCharacter~=target.Character
 
 end
-end
-
-workspace.CurrentCamera.CameraSubject=game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-  end
 })
 
 
@@ -5967,6 +5993,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
