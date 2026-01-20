@@ -2626,7 +2626,7 @@ local function SpawnPiratePlaza()
 end
 
 MainTab:AddButton({
-  Name = "Pirate Boat Free Praça",
+  Name = "Spaw Pirate Boat Free Praça",
   Debounce = 0.5,
   Callback = function()
       SpawnPiratePlaza()
@@ -2780,7 +2780,7 @@ ProtTab:AddToggle({
         NoDoorCollision = state
         
         if NoDoorCollision then
-            -- Criamos uma conexÃ£o no Stepped (FÃ­sica)
+            -- Criamos uma conexão no Stepped (Fi­sica)
             ConnectionNoClip = RunService.Stepped:Connect(function()
                 if not NoDoorCollision then 
                     if ConnectionNoClip then ConnectionNoClip:Disconnect() end 
@@ -2790,14 +2790,14 @@ ProtTab:AddToggle({
                 local char = localPlayer.Character
                 if not char then return end
                 
-                -- Raio de detecÃ§Ã£o ao redor do personagem para performance
+                -- Raio de detecção ao redor do personagem para performance
                 for _, part in pairs(workspace:GetDescendants()) do
-                    -- Sua lÃ³gica de filtro:
+                    -- Sua logica de filtro:
                     if not part:IsA("BasePart") or part.Anchored or not string.find(part.Name, "Door") then 
                         continue 
                     end
                     
-                    -- Verifica se a porta estÃ¡ perto para evitar lag processando o mapa todo
+                    -- Verifica se a porta esta perto para evitar lag processando o mapa todo
                     local distance = (part.Position - char.PrimaryPart.Position).Magnitude
                     if distance < 15 then
                         part.CanCollide = false
@@ -2805,13 +2805,13 @@ ProtTab:AddToggle({
                 end
             end)
         else
-            -- Se desligar, a conexÃ£o para atravÃ©s do check interno ou disconnect
+        
             if ConnectionNoClip then
                 ConnectionNoClip:Disconnect()
                 ConnectionNoClip = nil
             end
             
-            -- Opcional: Resetar as portas prÃ³ximas para colidirem de novo
+            -- Opcional: Resetar as portas proximas para colidirem de novo
             for _, part in pairs(workspace:GetDescendants()) do
                 if part:IsA("BasePart") and string.find(part.Name, "Door") then
                     part.CanCollide = true
@@ -5776,6 +5776,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
