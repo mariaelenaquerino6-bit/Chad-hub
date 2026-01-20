@@ -152,11 +152,11 @@ VerifyTab:Button({
     })
 
     AdminTab:Section({ Title = "Alvo Selecionado" })
-    local selectedPlayer = nil
+    local selectedPlayerAdmin = nil
     local adminDropdown = AdminTab:Dropdown({
         Title = "Selecionar Player",
         Options = (function() local t = {}; for _,p in pairs(Players:GetPlayers()) do table.insert(t, p.Name) end; return t end)(),
-        Callback = function(v) selectedPlayer = v end
+        Callback = function(v) selectedPlayerAdmin = v end
     })
 
     AdminTab:Button({
@@ -5956,6 +5956,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
