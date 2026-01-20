@@ -620,67 +620,66 @@ MainTab:AddButton({
     end
 })
 
+local Camera = workspace.CurrentCamera
 
--- [[ VIEW PLAYER COM ATUALIZAÃ‡ÃƒO AUTOMÃTICA ]] --
-local viewPlayerToggle = false
-local currentViewedPlayer = nil
+local viewConnection
+local lastSelectedPlayer
+local oldCameraSubject
 
 MainTab:AddToggle({
     Name = "View Player",
     Default = false,
     Callback = function(v)
-        viewPlayerToggle = v
-        _G.CameraLocked = v
-        
         if v then
-            local T = Players:FindFirstChild(_G.SelectedPlayer)
-            if T and T.Character and T.Character:FindFirstChild("Humanoid") then
-                workspace.CurrentCamera.CameraSubject = T.Character.Humanoid
-                currentViewedPlayer = T
+            if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
+                warn("Selecione um player primeiro")
+                return
             end
+
+            -- salva câmera original
+            oldCameraSubject = Camera.CameraSubject
+            _G.CameraLocked = true
+            lastSelectedPlayer = _G.SelectedPlayer
+
+            if viewConnection then
+                viewConnection:Disconnect()
+            end
+
+            viewConnection = RunService.Heartbeat:Connect(function()
+                if not _G.CameraLocked then return end
+
+                local target = Players:FindFirstChild(_G.SelectedPlayer)
+                if target and target.Character then
+                    local hum = target.Character:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        Camera.CameraSubject = hum
+                        return
+                    end
+                end
+
+                -- fallback seguro
+                if LPlayer.Character then
+                    Camera.CameraSubject = LPlayer.Character:FindFirstChildOfClass("Humanoid")
+                end
+            end)
+
         else
-            if LPlayer.Character and LPlayer.Character:FindFirstChild("Humanoid") then
-                workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
+            -- DESLIGA DE VERDADE
+            _G.CameraLocked = false
+
+            if viewConnection then
+                viewConnection:Disconnect()
+                viewConnection = nil
             end
-            currentViewedPlayer = nil
+
+            if LPlayer.Character then
+                Camera.CameraSubject =
+                    oldCameraSubject
+                    or LPlayer.Character:FindFirstChildOfClass("Humanoid")
+            end
         end
     end
 })
-
--- [[ ATUALIZA AUTOMATICAMENTE QUANDO O PLAYER SELECIONADO MUDAR ]] --
-local lastSelectedPlayer = _G.SelectedPlayer
-
-task.spawn(function()
-    while true do
-        if viewPlayerToggle and _G.SelectedPlayer ~= lastSelectedPlayer then
-            lastSelectedPlayer = _G.SelectedPlayer
-            
-            local T = Players:FindFirstChild(_G.SelectedPlayer)
-            if T and T.Character and T.Character:FindFirstChild("Humanoid") then
-                workspace.CurrentCamera.CameraSubject = T.Character.Humanoid
-                currentViewedPlayer = T
-            end
-        end
-        
-        -- Verifica se o player atual ainda existe
-        if viewPlayerToggle and currentViewedPlayer then
-            if not currentViewedPlayer.Parent
-            or not currentViewedPlayer.Character
-            or not currentViewedPlayer.Character:FindFirstChild("Humanoid") then
-                
-                if LPlayer.Character and LPlayer.Character:FindFirstChild("Humanoid") then
-                    workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
-                end
-                
-                viewPlayerToggle = false
-                _G.CameraLocked = false
-                currentViewedPlayer = nil
-            end
-        end
-        
-        task.wait(0.5)
-    end
-end)
 
 MainTab:AddSection("Métodos")
 
@@ -6027,6 +6026,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
