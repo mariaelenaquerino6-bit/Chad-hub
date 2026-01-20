@@ -98,7 +98,13 @@ local Window = WindUI:CreateWindow({
 -- Só aparecem para Bolsonaro_Jair7. Outros usuários nem saberão que existem.
 -- =============================================================================
 
--- [[ BOTÃO DE VERIFICAÇÃO ATUALIZADO ]]
+if IS_ADMIN then
+    local VerifyTab = Window:Tab({
+        Title = "Verificar",
+        Icon = "check_circle"
+    })
+
+
 VerifyTab:Button({
     Title = "Marcar Usuários do Script Normal",
     Callback = function()
@@ -5880,6 +5886,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
