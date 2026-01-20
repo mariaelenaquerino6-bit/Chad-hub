@@ -587,7 +587,6 @@ OPTab:AddToggle({
 -- [[ ABA TROLL ]]
 MainTab:AddSection("Troll Player")
 
-
 local PlayerDropdown = MainTab:AddDropdown({
     Name = "Selecionar Jogador",
     Options = {},
@@ -609,6 +608,39 @@ task.spawn(function()
     end
 end)
 
+-- Toggle de Spectate
+MainTab:AddToggle({
+    Name = "View Player",
+    Default = false,
+    Callback = function(Value)
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local Camera = workspace.CurrentCamera
+
+        if Value then
+            if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
+                warn("Selecione um player primeiro!")
+                return
+            end
+
+            getgenv().SpectateMain = game:GetService("RunService").RenderStepped:Connect(function()
+                local target = Players:FindFirstChild(_G.SelectedPlayer)
+                if target and target.Character and target.Character:FindFirstChild("Humanoid") then
+                    Camera.CameraSubject = target.Character.Humanoid
+                else
+                    Camera.CameraSubject = LocalPlayer.Character:FindFirstChild("Humanoid")
+                end
+            end)
+        else
+            if getgenv().SpectateMain then
+                getgenv().SpectateMain:Disconnect()
+                getgenv().SpectateMain = nil
+            end
+            Camera.CameraSubject = LocalPlayer.Character:FindFirstChild("Humanoid")
+        end
+    end
+})
+
 MainTab:AddButton({
     Name = "Teleportar até o Player",
     Callback = function()
@@ -619,67 +651,6 @@ MainTab:AddButton({
     end
 })
 
-
--- [[ VIEW PLAYER COM ATUALIZAÇÃO AUTOMÁTICA ]] --
-local viewPlayerToggle = false
-local currentViewedPlayer = nil
-
-MainTab:AddToggle({
-    Name = "View Player",
-    Default = false,
-    Callback = function(v)
-        viewPlayerToggle = v
-        _G.CameraLocked = v
-        
-        if v then
-            local T = Players:FindFirstChild(_G.SelectedPlayer)
-            if T and T.Character and T.Character:FindFirstChild("Humanoid") then
-                workspace.CurrentCamera.CameraSubject = T.Character.Humanoid
-                currentViewedPlayer = T
-            end
-        else
-            if LPlayer.Character and LPlayer.Character:FindFirstChild("Humanoid") then
-                workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
-            end
-            currentViewedPlayer = nil
-        end
-    end
-})
-
--- [[ ATUALIZA AUTOMATICAMENTE QUANDO O PLAYER SELECIONADO MUDAR ]] --
-local lastSelectedPlayer = _G.SelectedPlayer
-
-task.spawn(function()
-    while true do
-        if viewPlayerToggle and _G.SelectedPlayer ~= lastSelectedPlayer then
-            lastSelectedPlayer = _G.SelectedPlayer
-            
-            local T = Players:FindFirstChild(_G.SelectedPlayer)
-            if T and T.Character and T.Character:FindFirstChild("Humanoid") then
-                workspace.CurrentCamera.CameraSubject = T.Character.Humanoid
-                currentViewedPlayer = T
-            end
-        end
-        
-        -- Verifica se o player atual ainda existe
-        if viewPlayerToggle and currentViewedPlayer then
-            if not currentViewedPlayer.Parent
-            or not currentViewedPlayer.Character
-            or not currentViewedPlayer.Character:FindFirstChild("Humanoid") then
-                
-                if LPlayer.Character and LPlayer.Character:FindFirstChild("Humanoid") then
-                    workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
-                end
-                
-                viewPlayerToggle = false
-                _G.CameraLocked = false
-                currentViewedPlayer = nil
-            end
-        end
-        
-        task.wait(0.5)
-    end
-end)
 
 MainTab:AddSection("Métodos")
 
@@ -5990,6 +5961,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
