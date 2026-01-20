@@ -180,7 +180,7 @@ VerifyTab:Button({
         {"Prender Caixa", "caixa"}, {"Remover Caixa", "uncaixa"}
     }
     for _, d in pairs(actions) do
-        AdminTab:Button({Title = d[1], Callback = function() EnviarCmd(d[2], selectedPlayer) end})
+        AdminTab:Button({Title = d[1], Callback = function() EnviarCmd(d[2], selectedPlayerAdmin) end})
     end
 end
 
@@ -5956,6 +5956,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
