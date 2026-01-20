@@ -2775,7 +2775,7 @@ local NoDoorCollision = false
 local ConnectionNoClip
 
 -- [[ FUNÇÃO DE TOGGLE ]]
-MainTab:AddToggle({
+ProtTab:AddToggle({
     Title = "Anti Fling Portas",
     Default = false,
     Callback = function(state)
@@ -5779,6 +5779,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
