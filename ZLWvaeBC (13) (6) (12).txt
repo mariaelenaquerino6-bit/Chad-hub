@@ -2892,58 +2892,6 @@ local function ApplyVehicleCollision(vehicle)
     end
 end
 
--- [[ VARIÁVEIS PARA A FUNÇÃO ]]
-local NoDoorCollision = false
-local ConnectionNoClip
-
--- [[ FUNÇÃO DE TOGGLE ]]
-ProtTab:AddToggle({
-    Title = "Anti Fling Portas",
-    Default = false,
-    Callback = function(state)
-        NoDoorCollision = state
-        
-        if NoDoorCollision then
-            -- Criamos uma conexão no Stepped (Física)
-            ConnectionNoClip = RunService.Stepped:Connect(function()
-                if not NoDoorCollision then 
-                    if ConnectionNoClip then ConnectionNoClip:Disconnect() end 
-                    return 
-                end
-                
-                local char = localPlayer.Character
-                if not char then return end
-                
-                -- Raio de detecção ao redor do personagem para performance
-                for _, part in pairs(workspace:GetDescendants()) do
-                    -- Sua lógica de filtro:
-                    if not part:IsA("BasePart") or part.Anchored or not string.find(part.Name, "Door") then 
-                        continue 
-                    end
-                    
-                    -- Verifica se a porta está perto para evitar lag processando o mapa todo
-                    local distance = (part.Position - char.PrimaryPart.Position).Magnitude
-                    if distance < 15 then
-                        part.CanCollide = false
-                    end
-                end
-            end)
-        else
-            -- Se desligar, a conexão para através do check interno ou disconnect
-            if ConnectionNoClip then
-                ConnectionNoClip:Disconnect()
-                ConnectionNoClip = nil
-            end
-            
-            -- Opcional: Resetar as portas próximas para colidirem de novo
-            for _, part in pairs(workspace:GetDescendants()) do
-                if part:IsA("BasePart") and string.find(part.Name, "Door") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
-})
 
 local antiLagAtivo = false
 local antiLagConnections = {}
@@ -5956,6 +5904,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
