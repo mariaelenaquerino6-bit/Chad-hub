@@ -1,71 +1,3 @@
--- [[ CHAD HUB - GAME PROTECTION SYSTEM ]]
-
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
-
-local BROOKHAVEN_ID = 4924922222
-local CURRENT_ID = game.PlaceId
-
-local function ShowModerationMessage()
-    local ScreenGui = Instance.new("ScreenGui", (gethui or function() return CoreGui end)())
-    ScreenGui.Name = "ChadHub_Protection"
-    
-    local Main = Instance.new("Frame", ScreenGui)
-    Main.Size = UDim2.new(0, 350, 0, 150)
-    Main.Position = UDim2.new(0.5, -175, 0.5, -75)
-    Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Main.BorderSizePixel = 0
-    
-    local Corner = Instance.new("UICorner", Main)
-    Corner.CornerRadius = UDim.new(0, 10)
-    
-    local Stroke = Instance.new("UIStroke", Main)
-    Stroke.Color = Color3.fromRGB(140, 0, 255)
-    Stroke.Thickness = 2
-    
-    local Title = Instance.new("TextLabel", Main)
-    Title.Size = UDim2.new(1, 0, 0, 40)
-    Title.BackgroundTransparency = 1
-    Title.Text = "MODERATION NOTICE"
-    Title.TextColor3 = Color3.fromRGB(140, 0, 255)
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 16
-    
-    local Message = Instance.new("TextLabel", Main)
-    Message.Size = UDim2.new(1, -20, 1, -50)
-    Message.Position = UDim2.new(0, 10, 0, 40)
-    Message.BackgroundTransparency = 1
-    Message.Text = "Execution Denied!\n\nChad Hub only supports Brookhaven RP.\nPlease join the correct game to use this script."
-    Message.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Message.Font = Enum.Font.Gotham
-    Message.TextSize = 14
-    Message.TextWrapped = true
-    
-    task.wait(5)
-    
-    local Tween = TweenService:Create(Main, TweenInfo.new(1), {BackgroundTransparency = 1})
-    local TweenText1 = TweenService:Create(Title, TweenInfo.new(1), {TextTransparency = 1})
-    local TweenText2 = TweenService:Create(Message, TweenInfo.new(1), {TextTransparency = 1})
-    local TweenStroke = TweenService:Create(Stroke, TweenInfo.new(1), {Transparency = 1})
-    
-    Tween:Play()
-    TweenText1:Play()
-    TweenText2:Play()
-    TweenStroke:Play()
-    
-    task.wait(1)
-    ScreenGui:Destroy()
-end
-
--- Verificação de Segurança
-if CURRENT_ID ~= BROOKHAVEN_ID then
-    task.spawn(ShowModerationMessage)
-    warn("Chad Hub: Restricted Access. This script is only for Brookhaven.")
-    return -- Para a execução aqui
-end
-
--- [[ CHAD HUB - GAME PROTECTION SYSTEM ]]
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -5762,6 +5694,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
