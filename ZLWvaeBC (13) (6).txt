@@ -97,29 +97,48 @@ local Window = WindUI:CreateWindow({
 -- [ ABAS EXCLUSIVAS DE ADMIN ]
 -- Só aparecem para Bolsonaro_Jair7. Outros usuários nem saberão que existem.
 -- =============================================================================
-if IS_ADMIN then
-    local VerifyTab = Window:Tab({
-        Title = "Verificar",
-        Icon = "check_circle"
-    })
 
-    VerifyTab:Section({ Title = "Rastreamento" })
-    VerifyTab:Button({
-        Title = "Marcar Todos os Players Free",
-        Callback = function()
-            for _, p in pairs(Players:GetPlayers()) do
+-- [[ BOTÃO DE VERIFICAÇÃO ATUALIZADO ]]
+VerifyTab:Button({
+    Title = "Marcar Usuários do Script Normal",
+    Callback = function()
+        local count = 0
+        for _, p in pairs(Players:GetPlayers()) do
+            -- SÓ MARCA SE TIVER A STRING "IsChadUser" (ou seja, está usando o script)
+            -- E não marca você mesmo
+            if p:FindFirstChild("IsChadUser") and p ~= localPlayer then
                 if p.Character and p.Character:FindFirstChild("Head") then
                     if p.Character.Head:FindFirstChild("ChadTag") then p.Character.Head.ChadTag:Destroy() end
+                    
                     local b = Instance.new("BillboardGui", p.Character.Head)
-                    b.Name = "ChadTag"; b.Size = UDim2.new(0,200,0,50); b.ExtentsOffset = Vector3.new(0,3,0); b.AlwaysOnTop = true
+                    b.Name = "ChadTag"
+                    b.Size = UDim2.new(0, 200, 0, 50)
+                    b.ExtentsOffset = Vector3.new(0, 3, 0)
+                    b.AlwaysOnTop = true
+
                     local t = Instance.new("TextLabel", b)
-                    t.Size = UDim2.new(1,0,1,0); t.BackgroundTransparency = 1; t.Text = "✨ Usuário Chad Free ✨"
-                    t.TextColor3 = Color3.fromRGB(180, 180, 180); t.Font = Enum.Font.GothamBold; t.TextSize = 14
+                    t.Size = UDim2.new(1, 0, 1, 0)
+                    t.BackgroundTransparency = 1
+                    t.Text = "CHAD HUB USER"
+                    
+                    -- COR ROXA NEON (Magenta Forte)
+                    t.TextColor3 = Color3.fromRGB(191, 0, 255) 
+                    t.TextStrokeColor3 = Color3.fromRGB(130, 0, 200)
+                    t.TextStrokeTransparency = 0 -- Faz o efeito "Neon"
+                    
+                    t.Font = Enum.Font.GothamBold
+                    t.TextSize = 16
+                    count = count + 1
                 end
             end
-            WindUI:Notify({Title = "Admin", Content = "Jogadores marcados!", Image = "success"})
         end
-    })
+        WindUI:Notify({
+            Title = "Admin", 
+            Content = "Encontrados "..count.." usuários do Chad Hub!", 
+            Image = "check"
+        })
+    end
+})
 
     local AdminTab = Window:Tab({
         Title = "Admin",
@@ -2802,7 +2821,7 @@ local NoDoorCollision = false
 local ConnectionNoClip
 
 -- [[ FUNÇÃO DE TOGGLE ]]
-MainTab:Toggle({
+MainTab:AddToggle({
     Title = "Anti Fling Portas",
     Default = false,
     Callback = function(state)
@@ -5821,6 +5840,27 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
+
+-- [[ COLOCAR NO INÍCIO DO SCRIPT (Para identificar quem usa) ]]
+local ChadUsers = {}
+local Events = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents", 3) or game:GetService("ReplicatedStorage")
+
+-- Sinalizador: Avisa ao teu script que este player está usando o Hub
+task.spawn(function()
+    while task.wait(5) do
+        -- Envia um sinal falso de "Digitando" para não poluir o chat, mas ser detectável
+        local canal = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+        if canal then
+            -- O sinal não aparece no chat, mas o teu script admin consegue ler os metadados se quiser
+            -- Para simplificar, vamos usar uma StringValue oculta no Player
+            if not localPlayer:FindFirstChild("IsChadUser") then
+                local val = Instance.new("StringValue", localPlayer)
+                val.Name = "IsChadUser"
+            end
+        end
+    end
+end)
+
 task.spawn(function()
     pcall(function()
         local RE = game:GetService("ReplicatedStorage"):WaitForChild("RE", 9e9)
@@ -5840,6 +5880,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
