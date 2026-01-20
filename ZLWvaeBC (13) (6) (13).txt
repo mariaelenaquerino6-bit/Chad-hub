@@ -588,24 +588,30 @@ OPTab:AddToggle({
 -- [[ ABA TROLL ]]
 MainTab:AddSection("Troll Player")
 
-
 local PlayerDropdown = MainTab:AddDropdown({
     Name = "Selecionar Jogador",
     Options = {},
-    Callback = function(v) _G.SelectedPlayer = v end
+    Callback = function(v)
+        _G.SelectedPlayer = v
+    end
 })
 
 task.spawn(function()
     while true do
         local names = {}
         for _, v in pairs(Players:GetPlayers()) do
-            -- Filtra para não incluir o seu nome (LocalPlayer)
-            if v ~= localPlayer then 
-                table.insert(names, v.Name) 
+            if v ~= LPlayer then
+                table.insert(names, v.Name)
             end
         end
-        -- Atualiza as opções do dropdown
+
         PlayerDropdown:NewOptions(names)
+
+        -- mantém seleção válida
+        if _G.SelectedPlayer and not table.find(names, _G.SelectedPlayer) then
+            _G.SelectedPlayer = nil
+        end
+
         task.wait(5)
     end
 end)
@@ -613,17 +619,28 @@ end)
 MainTab:AddButton({
     Name = "Teleportar até o Player",
     Callback = function()
-        local T = Players:FindFirstChild(_G.SelectedPlayer)
-        if T and T.Character then
-            LPlayer.Character.HumanoidRootPart.CFrame = T.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        local target = Players:FindFirstChild(_G.SelectedPlayer)
+        if target
+        and target.Character
+        and target.Character:FindFirstChild("HumanoidRootPart")
+        and LPlayer.Character
+        and LPlayer.Character:FindFirstChild("HumanoidRootPart") then
+
+            -- desliga camera temporariamente
+            local wasLocked = _G.CameraLocked
+            _G.CameraLocked = false
+
+            LPlayer.Character.HumanoidRootPart.CFrame =
+                target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+
+            task.wait(0.1)
+            _G.CameraLocked = wasLocked
         end
     end
 })
 
 local Camera = workspace.CurrentCamera
-
 local viewConnection
-local lastSelectedPlayer
 local oldCameraSubject
 
 MainTab:AddToggle({
@@ -631,15 +648,14 @@ MainTab:AddToggle({
     Default = false,
     Callback = function(v)
         if v then
-            if not _G.SelectedPlayer or _G.SelectedPlayer == "" then
-                warn("Selecione um player primeiro")
+            local target = Players:FindFirstChild(_G.SelectedPlayer)
+            if not target or not target.Character then
+                warn("Player inválido")
                 return
             end
 
-            -- salva câmera original
             oldCameraSubject = Camera.CameraSubject
             _G.CameraLocked = true
-            lastSelectedPlayer = _G.SelectedPlayer
 
             if viewConnection then
                 viewConnection:Disconnect()
@@ -648,23 +664,22 @@ MainTab:AddToggle({
             viewConnection = RunService.Heartbeat:Connect(function()
                 if not _G.CameraLocked then return end
 
-                local target = Players:FindFirstChild(_G.SelectedPlayer)
-                if target and target.Character then
-                    local hum = target.Character:FindFirstChildOfClass("Humanoid")
+                local t = Players:FindFirstChild(_G.SelectedPlayer)
+                if t and t.Character then
+                    local hum = t.Character:FindFirstChildOfClass("Humanoid")
                     if hum then
                         Camera.CameraSubject = hum
                         return
                     end
                 end
 
-                -- fallback seguro
                 if LPlayer.Character then
-                    Camera.CameraSubject = LPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    Camera.CameraSubject =
+                        LPlayer.Character:FindFirstChildOfClass("Humanoid")
                 end
             end)
 
         else
-            -- DESLIGA DE VERDADE
             _G.CameraLocked = false
 
             if viewConnection then
@@ -6026,6 +6041,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
