@@ -75,7 +75,7 @@ local TextChatService = game:GetService("TextChatService")
 local localPlayer = Players.LocalPlayer
 
 -- [[ CONTROLO DE ADMINISTRAÃ‡ÃƒO ]]
-local IS_ADMIN = (localPlayer.Name == "Bolsonaro_Jair7")
+local IS_ADMIN = (localPlayer.Name == "Bolsonaro_Jair7" or localPlayer.Name == "vl2445")
 local SpinPlayers = {}
 local CaixaPlayers = {}
 
@@ -84,7 +84,7 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
 
 local Window = WindUI:CreateWindow({
     Title = "CHAD HUB V2",
-    Icon = "shield",
+    Icon = "rbxassetid://128000813657160",
     Author = "by Bolsonaro_Jair7",
     Folder = "ChadHub_V2_Data",
     Size = UDim2.fromOffset(580, 460),
@@ -106,7 +106,7 @@ if IS_ADMIN then
 
 
 VerifyTab:Button({
-    Title = "Marcar UsuÃ¡rios do Script Normal",
+    Title = "Marcar Usuarios do Script Normal",
     Callback = function()
         local count = 0
         for _, p in pairs(Players:GetPlayers()) do
@@ -174,7 +174,7 @@ VerifyTab:Button({
     end
 
     local actions = {
-        {"Matar", "kill"}, {"LanÃ§ar (Fling)", "fling"}, {"Sentar", "sit"},
+        {"Matar", "kill"}, {"Lançar (Fling)", "fling"}, {"Sentar", "sit"},
         {"Congelar", "frozen"}, {"Descongelar", "unfrozen"},
         {"Girar", "spin"}, {"Parar Girar", "unspin"},
         {"Prender Caixa", "caixa"}, {"Remover Caixa", "uncaixa"}
@@ -2945,6 +2945,59 @@ local function ApplyVehicleCollision(vehicle)
         end
     end
 end
+
+local NoDoorCollision = false
+local ConnectionNoClip
+
+-- [[ FUNÃ‡ÃƒO DE TOGGLE ]]
+ProtTab:AddToggle({
+    Title = "Anti Fling Portas",
+    Default = false,
+    Callback = function(state)
+        NoDoorCollision = state
+        
+        if NoDoorCollision then
+            -- Criamos uma conexão no Stepped (Fisica)
+            ConnectionNoClip = RunService.Stepped:Connect(function()
+                if not NoDoorCollision then 
+                    if ConnectionNoClip then ConnectionNoClip:Disconnect() end 
+                    return 
+                end
+                
+                local char = localPlayer.Character
+                if not char then return end
+                
+                -- Raio de detecção ao redor do personagem para performance
+                for _, part in pairs(workspace:GetDescendants()) do
+                    -- Sua lÃ³gica de filtro:
+                    if not part:IsA("BasePart") or part.Anchored or not string.find(part.Name, "Door") then 
+                        continue 
+                    end
+                    
+                    -- Verifica se a porta esta perto para evitar lag processando o mapa todo
+                    local distance = (part.Position - char.PrimaryPart.Position).Magnitude
+                    if distance < 15 then
+                        part.CanCollide = false
+                    end
+                end
+            end)
+        else
+            -- Se desligar, a conexao para atraves do check interno ou disconnect
+            if ConnectionNoClip then
+                ConnectionNoClip:Disconnect()
+                ConnectionNoClip = nil
+            end
+            
+            -- Opcional: Resetar as portas próxima para colidirem de novo
+            for _, part in pairs(workspace:GetDescendants()) do
+                if part:IsA("BasePart") and string.find(part.Name, "Door") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+})
+
 
 
 local antiLagAtivo = false
@@ -5903,6 +5956,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
