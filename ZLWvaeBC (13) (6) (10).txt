@@ -101,7 +101,7 @@ local Window = WindUI:CreateWindow({
 if IS_ADMIN then
     local VerifyTab = Window:Tab({
         Title = "Verificar",
-        Icon = "check_circle"
+        Icon = "user"
     })
 
 
@@ -261,7 +261,7 @@ TextChatService.MessageReceived:Connect(function(msg)
                 
                 local img = Instance.new("ImageLabel", sg)
                 img.Size = UDim2.new(1, 0, 1, 0)
-                img.Image = "rbxassetid://12433698744"
+                img.Image = "rbxassetid://129339078196468"
                 img.BackgroundTransparency = 1
                 
                 local sound = Instance.new("Sound", game:GetService("SoundService"))
@@ -5992,6 +5992,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
