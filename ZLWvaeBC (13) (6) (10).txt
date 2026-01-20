@@ -2571,84 +2571,69 @@ MainTab:AddButton({
 
 
 -- [[ SPAWN PIRATE BOAT & TELEPORT TO PLAZA ]]
+
 local function SpawnPiratePlaza()
     local character = localPlayer.Character
     if not character then return end
-
     local hum = character:FindFirstChildOfClass("Humanoid")
     local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hum or not hrp then return end
-
     local vehicles = workspace:FindFirstChild("Vehicles")
-    if not vehicles then return end
-
+    
     local spawnPosPirate = CFrame.new(1754, -2, 58)  -- Local de spawn de barcos
-    local placaPos = CFrame.new(-26, 4, -23)   -- Praça
-
-    -- 1. Vai até o local de spawn
+    local placaPos = CFrame.new(-26, 4, -23)   -- PraÃ§a
+    
+    -- 1. Vai atÃ© o local de spawn
     hrp.CFrame = spawnPosPirate
     task.wait(0.5)
-
+    
     -- 2. Spawna o Barco Pirata
     local re = ReplicatedStorage:WaitForChild("RE")
-    local boatEvent = re:FindFirstChild("1Ca1r")
-    if boatEvent then
-        boatEvent:FireServer("PickingBoat", "PirateFree")
-    else
-        warn("Evento 1Ca1r não encontrado")
-        return
-    end
-
-    -- 3. Localiza o barco no workspace (espera até 5 segundos)
-    local pCar
+    re:FindFirstChild("1Ca1r"):FireServer("PickingBoat", "PirateFree")
+    
+    -- 3. Localiza o barco no workspace
+    local pCar = nil
     for i = 1, 50 do
         task.wait(0.1)
         pCar = vehicles:FindFirstChild(localPlayer.Name .. "Car")
         if pCar then break end
     end
-    if not pCar then
-        warn("Barco não spawnou para o player")
-        return
+    
+    if pCar then
+        -- 4. Procura o assento (VehicleSeat)
+        local seat = pCar:FindFirstChildWhichIsA("VehicleSeat", true)
+        if seat then
+            -- 5. Senta no barco
+            repeat
+                task.wait()
+                hrp.CFrame = seat.CFrame
+            until hum.Sit
+            
+            task.wait(0.3)
+            
+            -- 6. Teleporta o barco inteiro para a PraÃ§a (Sem girar)
+            if pCar.PrimaryPart then
+                pCar:SetPrimaryPartCFrame(placaPos)
+            else
+                seat.CFrame = placaPos
+            end
+            
+            task.wait(0.5)
+            
+            -- 7. Pula do barco
+            hum.Sit = false
+            task.wait(0.1)
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            hrp.CFrame = placaPos + Vector3.new(0, 5, 0)
+        end
     end
-
-    -- 4. Procura o assento
-    local seat = pCar:FindFirstChildWhichIsA("VehicleSeat", true)
-    if not seat then
-        warn("Assento não encontrado no barco")
-        return
-    end
-
-    -- 5. Senta no barco
-    repeat
-        task.wait()
-        hrp.CFrame = seat.CFrame
-    until hum.Sit
-
-    task.wait(0.3)
-
-    -- 6. Teleporta o barco para a praça
-    if pCar.PrimaryPart then
-        pCar:SetPrimaryPartCFrame(placaPos)
-    else
-        seat.CFrame = placaPos
-    end
-
-    task.wait(0.5)
-
-    -- 7. Sai do barco e teleporta para cima da praça
-    hum.Sit = false
-    task.wait(0.1)
-    hum:ChangeState(Enum.HumanoidStateType.Jumping)
-    hrp.CFrame = placaPos + Vector3.new(0, 5, 0)
 end
 
--- Botão na UI
 MainTab:AddButton({
-    Name = "Pirate Boat Free Praça",
-    Debounce = 0.5,
-    Callback = function()
-        task.spawn(SpawnPiratePlaza) -- spawn para não travar a UI
-    end
+  Name = "Pirate Boat Free PraÃ§a",
+  Debounce = 0.5,
+  Callback = function()
+      SpawnPiratePlaza()
+  end
 })
 
                                     
@@ -5744,6 +5729,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
