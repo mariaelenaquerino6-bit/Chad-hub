@@ -211,6 +211,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game.Players
 local Remotes = RS:WaitForChild("RE")
+local TextChatService = game:GetService("TextChatService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
 
 _G.AntiSit = false
 _G.SelectedPlayer = ""
@@ -5953,6 +5956,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
