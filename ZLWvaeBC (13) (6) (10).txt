@@ -2582,11 +2582,11 @@ local function SpawnPiratePlaza()
     local vehicles = workspace:FindFirstChild("Vehicles")
     if not vehicles then return end
 
-    local spawnPos = CFrame.new(1754, -2, 58)  -- Local de spawn de barcos
+    local spawnPosPirate = CFrame.new(1754, -2, 58)  -- Local de spawn de barcos
     local placaPos = CFrame.new(-26, 4, -23)   -- Praça
 
     -- 1. Vai até o local de spawn
-    hrp.CFrame = spawnPos
+    hrp.CFrame = spawnPosPirate
     task.wait(0.5)
 
     -- 2. Spawna o Barco Pirata
@@ -2639,7 +2639,7 @@ local function SpawnPiratePlaza()
     hum.Sit = false
     task.wait(0.1)
     hum:ChangeState(Enum.HumanoidStateType.Jumping)
-    hrp.CFrame = plazaPos + Vector3.new(0, 5, 0)
+    hrp.CFrame = placaPos + Vector3.new(0, 5, 0)
 end
 
 -- Botão na UI
@@ -2787,61 +2787,6 @@ local function ApplyVehicleCollision(vehicle)
     end
 end
 
--- [[ VARIÁVEIS PARA A FUNÇÃO ]]
-local NoDoorCollision = false
-local ConnectionNoClip
-
--- [[ FUNÇÃO DE TOGGLE ]]
-ProtTab:AddToggle({
-    Title = "Anti Fling Portas",
-    Default = false,
-    Callback = function(state)
-        NoDoorCollision = state
-        
-        if NoDoorCollision then
-            -- Conexão para desativar colisão das portas próximas
-            ConnectionNoClip = RunService.Stepped:Connect(function()
-                if not NoDoorCollision then 
-                    if ConnectionNoClip then ConnectionNoClip:Disconnect() end
-                    return
-                end
-                
-                local char = localPlayer.Character
-                if not char then return end
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                if not hrp then return end
-                
-                for _, part in pairs(workspace:GetDescendants()) do
-                    if part:IsA("BasePart") and not part.Anchored and string.find(part.Name, "Door") then
-                        local distance = (part.Position - hrp.Position).Magnitude
-                        if distance < 15 then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-            end)
-        else
-            -- Desligar: desconecta e restaura portas próximas
-            if ConnectionNoClip then
-                ConnectionNoClip:Disconnect()
-                ConnectionNoClip = nil
-            end
-            
-            local char = localPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                for _, part in pairs(workspace:GetDescendants()) do
-                    if part:IsA("BasePart") and string.find(part.Name, "Door") then
-                        local distance = (part.Position - hrp.Position).Magnitude
-                        if distance < 15 then
-                            part.CanCollide = true
-                        end
-                    end
-                end
-            end
-        end
-    end
-})
 
 local antiLagAtivo = false
 local antiLagConnections = {}
@@ -5799,6 +5744,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
