@@ -5814,26 +5814,6 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 
--- [[ COLOCAR NO INÃCIO DO SCRIPT (Para identificar quem usa) ]]
-local ChadUsers = {}
-local Events = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents", 3) or game:GetService("ReplicatedStorage")
-
--- Sinalizador: Avisa ao teu script que este player estÃ¡ usando o Hub
-task.spawn(function()
-    while task.wait(5) do
-        -- Envia um sinal falso de "Digitando" para nÃ£o poluir o chat, mas ser detectÃ¡vel
-        local canal = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-        if canal then
-            -- O sinal nÃ£o aparece no chat, mas o teu script admin consegue ler os metadados se quiser
-            -- Para simplificar, vamos usar uma StringValue oculta no Player
-            if not localPlayer:FindFirstChild("IsChadUser") then
-                local val = Instance.new("StringValue", localPlayer)
-                val.Name = "IsChadUser"
-            end
-        end
-    end
-end)
-
 task.spawn(function()
     pcall(function()
         local RE = game:GetService("ReplicatedStorage"):WaitForChild("RE", 9e9)
@@ -5846,7 +5826,7 @@ task.spawn(function()
         -- Configura a Bio (Cor Preta)
         task.wait(0.2)
         local argsBio = {
-            [1] = "RolePlayBio",
+            [1] = "RolePlayBio,
             [2] = "By Bolsonaro_Jair7"
         }
         RE:WaitForChild("1RPNam1eTex1t", 9e9):FireServer(unpack(argsBio))
@@ -5970,6 +5950,7 @@ VerifyTab:Button({
         AdminTab:Button({Title = d[1], Callback = function() EnviarCmd(d[2], selectedPlayerAdmin) end})
     end
 end
+
 
 
 
