@@ -2569,71 +2569,88 @@ MainTab:AddButton({
   end
 })
 
--- [[ SPAWN PIRATE BOAT & TELEPORT TO PLAZA ]]
 
+-- [[ SPAWN PIRATE BOAT & TELEPORT TO PLAZA ]]
 local function SpawnPiratePlaza()
     local character = localPlayer.Character
     if not character then return end
+
     local hum = character:FindFirstChildOfClass("Humanoid")
     local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hum or not hrp then return end
+
     local vehicles = workspace:FindFirstChild("Vehicles")
-    
+    if not vehicles then return end
+
     local spawnPos = CFrame.new(1754, -2, 58)  -- Local de spawn de barcos
-    local placaPos = CFrame.new(-26, 4, -23)   -- PraÃ§a
-    
-    -- 1. Vai atÃ© o local de spawn
+    local placaPos = CFrame.new(-26, 4, -23)   -- Praça
+
+    -- 1. Vai até o local de spawn
     hrp.CFrame = spawnPos
     task.wait(0.5)
-    
+
     -- 2. Spawna o Barco Pirata
     local re = ReplicatedStorage:WaitForChild("RE")
-    re:FindFirstChild("1Ca1r"):FireServer("PickingBoat", "PirateFree")
-    
-    -- 3. Localiza o barco no workspace
-    local pCar = nil
+    local boatEvent = re:FindFirstChild("1Ca1r")
+    if boatEvent then
+        boatEvent:FireServer("PickingBoat", "PirateFree")
+    else
+        warn("Evento 1Ca1r não encontrado")
+        return
+    end
+
+    -- 3. Localiza o barco no workspace (espera até 5 segundos)
+    local pCar
     for i = 1, 50 do
         task.wait(0.1)
         pCar = vehicles:FindFirstChild(localPlayer.Name .. "Car")
         if pCar then break end
     end
-    
-    if pCar then
-        -- 4. Procura o assento (VehicleSeat)
-        local seat = pCar:FindFirstChildWhichIsA("VehicleSeat", true)
-        if seat then
-            -- 5. Senta no barco
-            repeat
-                task.wait()
-                hrp.CFrame = seat.CFrame
-            until hum.Sit
-            
-            task.wait(0.3)
-            
-            -- 6. Teleporta o barco inteiro para a PraÃ§a (Sem girar)
-            if pCar.PrimaryPart then
-                pCar:SetPrimaryPartCFrame(placaPos)
-            else
-                seat.CFrame = placaPos
-            end
-            
-            task.wait(0.5)
-            
-            -- 7. Pula do barco
-            hum.Sit = false
-            task.wait(0.1)
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            hrp.CFrame = placaPos + Vector3.new(0, 5, 0)
-        end
+    if not pCar then
+        warn("Barco não spawnou para o player")
+        return
     end
+
+    -- 4. Procura o assento
+    local seat = pCar:FindFirstChildWhichIsA("VehicleSeat", true)
+    if not seat then
+        warn("Assento não encontrado no barco")
+        return
+    end
+
+    -- 5. Senta no barco
+    repeat
+        task.wait()
+        hrp.CFrame = seat.CFrame
+    until hum.Sit
+
+    task.wait(0.3)
+
+    -- 6. Teleporta o barco para a praça
+    if pCar.PrimaryPart then
+        pCar:SetPrimaryPartCFrame(placaPos)
+    else
+        seat.CFrame = placaPos
+    end
+
+    task.wait(0.5)
+
+    -- 7. Sai do barco e teleporta para cima da praça
+    hum.Sit = false
+    task.wait(0.1)
+    hum:ChangeState(Enum.HumanoidStateType.Jumping)
+    hrp.CFrame = plazaPos + Vector3.new(0, 5, 0)
 end
 
+-- Botão na UI
 MainTab:AddButton({
-  Name = "Pirate Boat Free Praça",
-  Debounce = 0.5,
-  Callback = function()
-      SpawnPiratePlaza()
-  end
+    Name = "Pirate Boat Free Praça",
+    Debounce = 0.5,
+    Callback = function()
+        task.spawn(SpawnPiratePlaza) -- spawn para não travar a UI
+    end
 })
+
                                     
 ProtTab:AddToggle({
     Name = "Anti-Sit",
@@ -2782,41 +2799,44 @@ ProtTab:AddToggle({
         NoDoorCollision = state
         
         if NoDoorCollision then
-            -- Criamos uma conexão no Stepped (Física)
+            -- Conexão para desativar colisão das portas próximas
             ConnectionNoClip = RunService.Stepped:Connect(function()
                 if not NoDoorCollision then 
-                    if ConnectionNoClip then ConnectionNoClip:Disconnect() end 
-                    return 
+                    if ConnectionNoClip then ConnectionNoClip:Disconnect() end
+                    return
                 end
                 
                 local char = localPlayer.Character
                 if not char then return end
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
                 
-                -- Raio de detecção ao redor do personagem para performance
                 for _, part in pairs(workspace:GetDescendants()) do
-                    -- Sua lógica de filtro:
-                    if not part:IsA("BasePart") or part.Anchored or not string.find(part.Name, "Door") then 
-                        continue 
-                    end
-                    
-                    -- Verifica se a porta está perto para evitar lag processando o mapa todo
-                    local distance = (part.Position - char.PrimaryPart.Position).Magnitude
-                    if distance < 15 then
-                        part.CanCollide = false
+                    if part:IsA("BasePart") and not part.Anchored and string.find(part.Name, "Door") then
+                        local distance = (part.Position - hrp.Position).Magnitude
+                        if distance < 15 then
+                            part.CanCollide = false
+                        end
                     end
                 end
             end)
         else
-            -- Se desligar, a conexão para através do check interno ou disconnect
+            -- Desligar: desconecta e restaura portas próximas
             if ConnectionNoClip then
                 ConnectionNoClip:Disconnect()
                 ConnectionNoClip = nil
             end
             
-            -- Opcional: Resetar as portas próximas para colidirem de novo
-            for _, part in pairs(workspace:GetDescendants()) do
-                if part:IsA("BasePart") and string.find(part.Name, "Door") then
-                    part.CanCollide = true
+            local char = localPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                for _, part in pairs(workspace:GetDescendants()) do
+                    if part:IsA("BasePart") and string.find(part.Name, "Door") then
+                        local distance = (part.Position - hrp.Position).Magnitude
+                        if distance < 15 then
+                            part.CanCollide = true
+                        end
+                    end
                 end
             end
         end
@@ -5779,6 +5799,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
