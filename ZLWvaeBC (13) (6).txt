@@ -587,7 +587,7 @@ OPTab:AddToggle({
 -- [[ ABA TROLL ]]
 MainTab:AddSection("Troll Player")
 
-local PlayerDropdown = AdminTab:Dropdown({
+local PlayerDropdown = MainTab:Dropdown({
     Title = "Selecionar Jogador",
     Options = {}, -- Começa vazio e o loop preenche
     Callback = function(v) 
@@ -5968,6 +5968,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
