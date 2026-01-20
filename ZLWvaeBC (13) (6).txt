@@ -619,15 +619,20 @@ MainTab:AddButton({
     end
 })
 
+
 -- [[ VIEW PLAYER COM ATUALIZAÇÃO AUTOMÁTICA ]] --
 local viewPlayerToggle = false
 local currentViewedPlayer = nil
+
+-- 🔒 trava simples para impedir outros sistemas de roubar a câmera
+_G.CameraLocked = false
 
 MainTab:AddToggle({
     Name = "View Player",
     Default = false,
     Callback = function(v)
         viewPlayerToggle = v
+        _G.CameraLocked = v
         
         if v then
             local T = Players:FindFirstChild(_G.SelectedPlayer)
@@ -638,8 +643,8 @@ MainTab:AddToggle({
         else
             if LPlayer.Character and LPlayer.Character:FindFirstChild("Humanoid") then
                 workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
-                currentViewedPlayer = nil
             end
+            currentViewedPlayer = nil
         end
     end
 })
@@ -659,24 +664,25 @@ task.spawn(function()
             end
         end
         
-        -- Verifica se o player atual ainda existe e tem Humanoid
+        -- Verifica se o player atual ainda existe
         if viewPlayerToggle and currentViewedPlayer then
-            if not currentViewedPlayer.Parent or 
-               not currentViewedPlayer.Character or 
-               not currentViewedPlayer.Character:FindFirstChild("Humanoid") then
-                -- Se o player saiu, volta para si mesmo
+            if not currentViewedPlayer.Parent
+            or not currentViewedPlayer.Character
+            or not currentViewedPlayer.Character:FindFirstChild("Humanoid") then
+                
                 if LPlayer.Character and LPlayer.Character:FindFirstChild("Humanoid") then
                     workspace.CurrentCamera.CameraSubject = LPlayer.Character.Humanoid
                 end
+                
                 viewPlayerToggle = false
+                _G.CameraLocked = false
                 currentViewedPlayer = nil
             end
         end
         
-        task.wait(0.5) -- Verifica a cada 0.5 segundos
+        task.wait(0.5)
     end
 end)
-
 
 MainTab:AddSection("Métodos")
 
@@ -5961,6 +5967,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
