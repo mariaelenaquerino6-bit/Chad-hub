@@ -937,12 +937,6 @@ local function KillCouch(targetPlayer)
                 
                 playerHumanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
 
-                -- 🔒 PROTEÇÃO DE CÂMERA
-                if not _G.CameraLocked then
-                    workspace.CurrentCamera.CameraSubject =
-                        targetPlayer.Character:FindFirstChild("Head") or targetHRP
-                end
-                
                 local rotation = 0
                 local startTime = tick()
                 
@@ -983,11 +977,6 @@ local function KillCouch(targetPlayer)
     playerHRP.RotVelocity = Vector3.zero
     playerHRP.Anchored = false
 
-    -- 🔒 FINALIZAÇÃO SEGURA
-    if not _G.CameraLocked then
-        workspace.CurrentCamera.CameraSubject = playerHumanoid
-    end
-end
 
 -- Função para Fling School Bus
 local function FlingSchoolBus(targetPlayer)
@@ -5961,6 +5950,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
