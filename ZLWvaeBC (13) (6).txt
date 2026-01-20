@@ -587,34 +587,27 @@ OPTab:AddToggle({
 -- [[ ABA TROLL ]]
 MainTab:AddSection("Troll Player")
 
-local PlayerDropdown = MainTab:Dropdown({
-    Title = "Selecionar Jogador",
-    Options = {}, -- Começa vazio e o loop preenche
-    Callback = function(v) 
-        selectedPlayer = v -- Define o alvo para os botões de admin
-    end
+
+local PlayerDropdown = MainTab:AddDropdown({
+    Name = "Selecionar Jogador",
+    Options = {},
+    Callback = function(v) _G.SelectedPlayer = v end
 })
 
 task.spawn(function()
     while true do
         local names = {}
         for _, v in pairs(Players:GetPlayers()) do
-            -- A mágica acontece aqui: Só insere se NÃO for você (localPlayer)
+            -- Filtra para não incluir o seu nome (LocalPlayer)
             if v ~= localPlayer then 
                 table.insert(names, v.Name) 
             end
         end
-        
-        -- Na WindUI o comando de atualizar é Refresh
-        -- O segundo argumento 'true' mantém o valor selecionado se ele ainda existir
-        pcall(function()
-            PlayerDropdown:Refresh(names, true)
-        end)
-        
-        task.wait(5) -- Atualiza a lista a cada 5 segundos
+        -- Atualiza as opções do dropdown
+        PlayerDropdown:NewOptions(names)
+        task.wait(5)
     end
 end)
-
 
 MainTab:AddButton({
     Name = "Teleportar até o Player",
@@ -5968,6 +5961,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
