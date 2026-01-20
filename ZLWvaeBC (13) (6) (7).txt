@@ -125,6 +125,26 @@ local function To(x, y, z, localName)
     end
 end
 
+-- [[ COLOCAR NO INÃCIO DO SCRIPT (Para identificar quem usa) ]]
+local ChadUsers = {}
+local Events = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents", 3) or game:GetService("ReplicatedStorage")
+
+-- Sinalizador: Avisa ao teu script que este player estÃ¡ usando o Hub
+task.spawn(function()
+    while task.wait(5) do
+        -- Envia um sinal falso de "Digitando" para nÃ£o poluir o chat, mas ser detectÃ¡vel
+        local canal = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+        if canal then
+            -- O sinal nÃ£o aparece no chat, mas o teu script admin consegue ler os metadados se quiser
+            -- Para simplificar, vamos usar uma StringValue oculta no Player
+            if not localPlayer:FindFirstChild("IsChadUser") then
+                local val = Instance.new("StringValue", localPlayer)
+                val.Name = "IsChadUser"
+            end
+        end
+    end
+end)
+
 local OPTab = Window:MakeTab({ Title = "OP", Icon = "crown" })
 local MainTab = Window:MakeTab({ Title = "Troll Players", Icon = "rbxassetid://13364900349" })
 local ProtTab = Window:MakeTab({ Title = "Proteção", Icon = "Shield" })
@@ -5950,6 +5970,7 @@ VerifyTab:Button({
         AdminTab:Button({Title = d[1], Callback = function() EnviarCmd(d[2], selectedPlayerAdmin) end})
     end
 end
+
 
 
 
