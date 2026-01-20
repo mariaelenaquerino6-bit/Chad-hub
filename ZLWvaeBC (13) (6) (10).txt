@@ -86,7 +86,7 @@ local MobileButton = Minimizer:CreateMobileMinimizer({
 })
 
 -- [[ VARIÁVEIS DO SEU SCRIPT ]]
-local LPlaer = game.Players.LocalPlayer
+local LPlayer = game.Players.LocalPlayer
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -5799,6 +5799,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
