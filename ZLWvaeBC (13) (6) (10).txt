@@ -167,8 +167,7 @@ if AdminNames then
     {"/jumpscare", "jumpscare"},
     {"/kick", "kick"},
     {"/lag", "lag"},
-    {"/backroom", "backroom"},
-    {"/unbackroom", "unbackroom"}
+    {"/bring", "bring"} -- Novo comando aqui
 }
 
     for _, d in pairs(actions) do
@@ -326,317 +325,27 @@ TextChatService.MessageReceived:Connect(function(msg)
             end)
 
 
-        
-        
-       -- [[ COMANDO: BACKROOMS ]]
-elseif cmd == "backroom" then
-    if not _G.BackroomVictims then _G.BackroomVictims = {} end
-    _G.BackroomVictims[localPlayer.Name] = true
-    
-    task.spawn(function()
-        -- Deleta se já existir uma backroom para este player
-        if workspace:FindFirstChild("Backrooms_" .. localPlayer.Name) then
-            workspace["Backrooms_" .. localPlayer.Name]:Destroy()
-        end
-
-        local folder = Instance.new("Folder", workspace)
-        folder.Name = "Backrooms_" .. localPlayer.Name
-        
-        -- Posição isolada no céu (altíssima)
-        local basePos = Vector3.new(math.random(-20000, 20000), 10000, math.random(-20000, 20000))
-        
-        -- Configurações de ambiente realista
-        local lighting = game:GetService("Lighting")
-        local originalBrightness = lighting.Brightness
-        local originalFog = lighting.FogEnd
-        
-        -- Configura iluminação das Backrooms
-        lighting.Brightness = 0.7
-        lighting.FogStart = 0
-        lighting.FogEnd = 300
-        lighting.FogColor = Color3.fromRGB(215, 200, 110)
-        lighting.Ambient = Color3.fromRGB(100, 100, 80)
-        lighting.OutdoorAmbient = Color3.fromRGB(80, 80, 60)
-        
-        -- Som ambiente autêntico das Backrooms
-        local buzz = Instance.new("Sound", folder)
-        buzz.SoundId = "rbxassetid://9061062330"
-        buzz.Looped = true
-        buzz.Volume = 0.8
-        buzz.Name = "BackroomsHum"
-        buzz:Play()
-        
-        -- Sons aleatórios de fundo (whispers, passos distantes)
-        local randomSounds = Instance.new("Folder", folder)
-        randomSounds.Name = "RandomSounds"
-        
-        -- Efeitos sonoros periódicos
-        task.spawn(function()
-            while folder.Parent do
-                wait(math.random(15, 30))
-                if folder.Parent then
-                    local whisper = Instance.new("Sound", randomSounds)
-                    whisper.SoundId = "rbxassetid://9118478112" -- Som de sussurro
-                    whisper.Volume = 0.3
-                    whisper:Play()
-                    game:GetService("Debris"):AddItem(whisper, 5)
+        -- [[ COMANDO: BRING (PUXAR JOGADOR) ]]
+        elseif cmd == "bring" then
+            -- Procura o jogador alvo no servidor pelo nome (target)
+            local targetPlayer = nil
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p.Name:lower() == target:lower() then
+                    targetPlayer = p
+                    break
                 end
             end
-        end)
-        
-        -- Cores autênticas das Backrooms
-        local wallColor = Color3.fromRGB(215, 200, 110) -- Amarelo sujo característico
-        local floorColor = Color3.fromRGB(163, 162, 114) -- Carpete desbotado
-        
-        -- Criar base do piso (infinito)
-        local ground = Instance.new("Part", folder)
-        ground.Size = Vector3.new(10000, 1, 10000) -- Piso gigante para sensação de infinito
-        ground.CFrame = CFrame.new(basePos) * CFrame.new(0, -0.5, 0)
-        ground.Anchored = true
-        ground.Color = floorColor
-        ground.Material = Enum.Material.Fabric
-        ground.Name = "InfiniteFloor"
-        
-        -- Criar céu (para isolamento visual)
-        local skyDome = Instance.new("Part", folder)
-        skyDome.Size = Vector3.new(5000, 5000, 5000)
-        skyDome.CFrame = CFrame.new(basePos) * CFrame.new(0, 2500, 0)
-        skyDome.Anchored = true
-        skyDome.Transparency = 1
-        skyDome.CanCollide = false
-        skyDome.Name = "SkyDome"
-        
-        -- Criar teto
-        local ceiling = Instance.new("Part", folder)
-        ceiling.Size = Vector3.new(10000, 1, 10000)
-        ceiling.CFrame = CFrame.new(basePos) * CFrame.new(0, 12, 0)
-        ceiling.Anchored = true
-        ceiling.Color = Color3.fromRGB(200, 200, 180)
-        ceiling.Material = Enum.Material.SmoothPlastic
-        ceiling.Name = "InfiniteCeiling"
-        
-        -- Função para criar corredor modular
-        local function createCorridor(startPosition, length, width, height)
-            local corridorFolder = Instance.new("Folder", folder)
-            corridorFolder.Name = "Corridor_" .. tostring(startPosition)
-            
-            -- Paredes laterais
-            local leftWall = Instance.new("Part", corridorFolder)
-            leftWall.Size = Vector3.new(2, height, length)
-            leftWall.CFrame = CFrame.new(startPosition) * CFrame.new(-width/2, height/2, length/2)
-            leftWall.Anchored = true
-            leftWall.Color = wallColor
-            leftWall.Material = Enum.Material.Concrete
-            
-            local rightWall = leftWall:Clone()
-            rightWall.Parent = corridorFolder
-            rightWall.CFrame = CFrame.new(startPosition) * CFrame.new(width/2, height/2, length/2)
-            
-            -- Chão do corredor
-            local floor = Instance.new("Part", corridorFolder)
-            floor.Size = Vector3.new(width, 1, length)
-            floor.CFrame = CFrame.new(startPosition) * CFrame.new(0, 0, length/2)
-            floor.Anchored = true
-            floor.Color = floorColor
-            floor.Material = Enum.Material.Fabric
-            
-            -- Teto do corredor
-            local roof = floor:Clone()
-            roof.Parent = corridorFolder
-            roof.CFrame = CFrame.new(startPosition) * CFrame.new(0, height, length/2)
-            roof.Color = Color3.fromRGB(200, 200, 180)
-            roof.Material = Enum.Material.SmoothPlastic
-            
-            return corridorFolder
-        end
-        
-        -- Criar labirinto infinito de corredores
-        local mazeFolder = Instance.new("Folder", folder)
-        mazeFolder.Name = "InfiniteMaze"
-        
-        -- Geração procedural do labirinto
-        local corridorSize = 20
-        local gridSize = 10 -- 10x10 grid de corredores
-        
-        for x = 0, gridSize-1 do
-            for z = 0, gridSize-1 do
-                local startPos = basePos + Vector3.new(
-                    x * 30, 
-                    0, 
-                    z * 30
-                )
-                
-                -- Aleatoriedade para criar sensação de labirinto
-                if math.random(1, 3) > 1 then
-                    local corridor = createCorridor(startPos, corridorSize, 10, 12)
-                    corridor.Parent = mazeFolder
-                    
-                    -- Adicionar luzes de teto em alguns corredores
-                    if math.random(1, 3) == 1 then
-                        local lightPart = Instance.new("Part", corridor)
-                        lightPart.Size = Vector3.new(8, 0.3, 2)
-                        lightPart.CFrame = CFrame.new(startPos) * CFrame.new(0, 11.8, corridorSize/2)
-                        lightPart.Anchored = true
-                        lightPart.Material = Enum.Material.Neon
-                        lightPart.Color = Color3.fromRGB(255, 255, 200)
-                        
-                        local light = Instance.new("PointLight", lightPart)
-                        light.Range = 25
-                        light.Brightness = 1.5
-                        light.Color = Color3.fromRGB(255, 255, 200)
-                        
-                        -- Efeito de piscar aleatório
-                        task.spawn(function()
-                            while lightPart.Parent do
-                                wait(math.random(5, 15))
-                                if lightPart.Parent then
-                                    light.Enabled = false
-                                    wait(0.1)
-                                    light.Enabled = true
-                                end
-                            end
-                        end)
-                    end
-                    
-                    -- Adicionar paredes divisórias aleatórias
-                    if math.random(1, 4) == 1 then
-                        local divider = Instance.new("Part", corridor)
-                        divider.Size = Vector3.new(2, 12, 2)
-                        divider.CFrame = CFrame.new(startPos) * CFrame.new(
-                            math.random(-4, 4), 
-                            6, 
-                            math.random(5, corridorSize-5)
-                        )
-                        divider.Anchored = true
-                        divider.Color = wallColor
-                        divider.Material = Enum.Material.Concrete
-                    end
+
+            if targetPlayer and targetPlayer.Character then
+                local targetHrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local myHrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+                if targetHrp and myHrp then
+                    -- Teleporta o alvo para a sua frente (offset de 3 studs)
+                    targetHrp.CFrame = myHrp.CFrame * CFrame.new(0, 0, -3)
                 end
             end
-        end
         
-        -- Efeito de névoa volumétrica
-        local fogPart = Instance.new("Part", folder)
-        fogPart.Size = Vector3.new(500, 100, 500)
-        fogPart.CFrame = CFrame.new(basePos) * CFrame.new(0, 50, 0)
-        fogPart.Transparency = 0.95
-        fogPart.Color = Color3.fromRGB(215, 200, 110)
-        fogPart.Material = Enum.Material.ForceField
-        fogPart.Anchored = true
-        fogPart.CanCollide = false
-        fogPart.Name = "AtmosphericFog"
-        
-        -- Sistema de partículas para poeira
-        local dust = Instance.new("ParticleEmitter", folder)
-        dust.Rate = 50
-        dust.Speed = NumberRange.new(0.5)
-        dust.Lifetime = NumberRange.new(5, 10)
-        dust.Size = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.1),
-            NumberSequenceKeypoint.new(0.5, 0.3),
-            NumberSequenceKeypoint.new(1, 0)
-        })
-        dust.Color = ColorSequence.new(Color3.fromRGB(200, 190, 120))
-        dust.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.7),
-            NumberSequenceKeypoint.new(1, 1)
-        })
-        dust.Acceleration = Vector3.new(0, -0.5, 0)
-        
-        -- Teleportar jogador para posição central
-        if hrp then
-            hrp.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
-            
-            -- Mensagem de imersão
-            task.spawn(function()
-                wait(1)
-                game.StarterGui:SetCore("SendNotification", {
-                    Title = "BACKROOMS",
-                    Text = "Você entrou nas Backrooms... Não há saída.",
-                    Icon = "",
-                    Duration = 5
-                })
-            end)
-        end
-        
-        -- Sistema para gerar mais corredores conforme o jogador explora
-        local generationDistance = 200
-        task.spawn(function()
-            while folder.Parent and hrp do
-                wait(5)
-                
-                local playerPos = hrp.Position
-                local distanceFromCenter = (playerPos - basePos).Magnitude
-                
-                if distanceFromCenter > generationDistance - 50 then
-                    -- Gerar novos corredores na direção que o jogador está indo
-                    local direction = (playerPos - basePos).Unit
-                    local newBasePos = basePos + (direction * generationDistance)
-                    
-                    for i = 1, 4 do
-                        local offset = Vector3.new(
-                            math.random(-30, 30),
-                            0,
-                            math.random(-30, 30)
-                        )
-                        local corridor = createCorridor(newBasePos + offset, 20, 10, 12)
-                        corridor.Parent = mazeFolder
-                    end
-                end
-            end
-        end)
-        
-        -- Armazenar configurações originais para restaurar depois
-        folder:SetAttribute("OriginalBrightness", originalBrightness)
-        folder:SetAttribute("OriginalFog", originalFog)
-
-        -- [[ ADIÇÃO: LOOP AUTOMÁTICO DE RENASCIMENTO (ANTI-RESET) ]]
-        task.spawn(function()
-            while _G.BackroomVictims[localPlayer.Name] do
-                local char = localPlayer.Character
-                local root = char and char:FindFirstChild("HumanoidRootPart")
-                
-                if not root then
-                    -- Se o player resetou/morreu, espera ele renascer e puxa de volta
-                    localPlayer.CharacterAdded:Wait()
-                    task.wait(0.5) -- Pequeno delay para evitar bugs de física
-                    local newRoot = localPlayer.Character:WaitForChild("HumanoidRootPart")
-                    newRoot.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
-                end
-                task.wait(1)
-            end
-        end)
-    end)
-
--- [[ COMANDO: UNBACKROOM ]]
-elseif cmd == "unbackroom" then
-    if _G.BackroomVictims then _G.BackroomVictims[localPlayer.Name] = nil end
-    local bk = workspace:FindFirstChild("Backrooms_" .. localPlayer.Name)
-    if bk then 
-        -- Restaurar configurações de iluminação
-        local lighting = game:GetService("Lighting")
-        lighting.Brightness = bk:GetAttribute("OriginalBrightness") or 1
-        lighting.FogEnd = bk:GetAttribute("OriginalFog") or 100000
-        
-        bk:Destroy()
-    end
-    
-    -- Teleporta o player de volta para o centro de Brookhaven
-    if hrp then
-        hrp.CFrame = CFrame.new(-42, 18, 18)
-        
-        -- Mensagem de retorno
-        task.spawn(function()
-            wait(1)
-            game.StarterGui:SetCore("SendNotification", {
-                Title = "BACKROOMS",
-                Text = "Você escapou das Backrooms... Por enquanto.",
-                Icon = "",
-                Duration = 5
-            })
-        end)
-    end                                     
-
             
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
@@ -6327,6 +6036,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
