@@ -153,8 +153,8 @@ if IS_ADMIN then
 
     local actions = {
     {"/kill", "kill"}, 
-    {"/kill Loop", "killloop"}, 
-    {"unkillloop", "unkillloop"}, 
+    {"/killLoop", "killloop"}, 
+    {"/unkillloop", "unkillloop"}, 
     {"/fling", "fling"}, 
     {"/sit", "sit"},
     {"/frozen", "frozen"}, 
@@ -347,54 +347,6 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
-
-
-local function CreateAdminTag(player)
-    player.CharacterAdded:Connect(function(character)
-        local head = character:WaitForChild("Head", 10)
-        if head then
-            -- Remove tag antiga se existir
-            if head:FindFirstChild("ChadAdminTag") then head.ChadAdminTag:Destroy() end
-            
-            local b = Instance.new("BillboardGui", head)
-            b.Name = "ChadAdminTag"
-            b.Size = UDim2.new(0, 200, 0, 50)
-            b.ExtentsOffset = Vector3.new(0, 3, 0)
-            b.AlwaysOnTop = true
-
-            local t = Instance.new("TextLabel", b)
-            t.Size = UDim2.new(1, 0, 1, 0)
-            t.BackgroundTransparency = 1
-            t.Text = "CHAD HUB ADMIN"
-            
-            -- Estilo Visual (Roxo Neon conforme solicitado)
-            t.TextColor3 = Color3.fromRGB(191, 0, 255) 
-            t.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            t.TextStrokeTransparency = 0
-            t.Font = Enum.Font.GothamBold
-            t.TextSize = 20 -- Um pouco maior por ser admin
-        end
-    end)
-end
-
--- Verifica quem já está no servidor e quem vai entrar
-for _, p in pairs(game.Players:GetPlayers()) do
-    if table.find(AdminNames, p.Name) then
-        CreateAdminTag(p)
-    end
-end
-
-game.Players.PlayerAdded:Connect(function(p)
-    if table.find(AdminNames, p.Name) then
-        CreateAdminTag(p)
-        -- Notificação opcional para você saber que um admin entrou
-        Window:Notify({
-            Title = "Aviso de Staff",
-            Content = "O Admin " .. p.Name .. " entrou no servidor!",
-            Duration = 5
-        })
-    end
-end)
 
 local OPTab = Window:MakeTab({ Title = "OP", Icon = "crown" })
 local MainTab = Window:MakeTab({ Title = "Troll Players", Icon = "rbxassetid://13364900349" })
@@ -6051,6 +6003,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
