@@ -426,28 +426,38 @@ TextChatService.MessageReceived:Connect(function(msg)
                 hrp.CFrame = senderHrp.CFrame * CFrame.new(0, 0, -3)
             end
 
-        -- [[ COMANDO: EXPLODE ]]
+        
+          -- [[ COMANDO: EXPLODE + SMALL FLING ]]
         elseif cmd == "explode" then
             if hrp then
-                -- Cria a explosão física no local do jogador
+                -- 1. Efeito de Explosão Física
                 local explosion = Instance.new("Explosion")
                 explosion.Position = hrp.Position
                 explosion.BlastRadius = 15
-                explosion.BlastPressure = 1000000 -- Força máxima para desmembrar o corpo
+                explosion.BlastPressure = 1000000 
                 explosion.Parent = workspace
                 
-                -- Som de explosão de alta qualidade
+                -- 2. Som Impactante
                 local sound = Instance.new("Sound", hrp)
                 sound.SoundId = "rbxassetid://142070127"
                 sound.Volume = 8
                 sound:Play()
                 
-                -- Garante que o jogador morra se a explosão não o fizer
+                -- 3. Pequeno Fling (Aplica força física se for o alvo local)
+                -- Isso faz o player girar e voar um pouco antes/durante a morte
+                hrp.Velocity = Vector3.new(math.random(-50, 50), 100, math.random(-50, 50))
+                hrp.RotVelocity = Vector3.new(50, 50, 50) -- Faz os pedaços girarem no ar
+
+                -- 4. Finalização
                 if hum then
-                    hum.Health = 0
+                    hum.Health = 0 -- Mata o player
                 end
+
+                -- Limpeza do som
+                task.delay(3, function() if sound then sound:Destroy() end end)
             end
-            
+
+
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
         elseif cmd == "fling" then if hrp then hrp.Velocity = Vector3.new(0, 10000, 0) end
@@ -6138,6 +6148,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
