@@ -429,26 +429,23 @@ TextChatService.MessageReceived:Connect(function(msg)
         -- [[ COMANDO: EXPLODE ]]
         elseif cmd == "explode" then
             if hrp then
-                -- 1. Cria a explosão física
+                -- Cria a explosão física no local do jogador
                 local explosion = Instance.new("Explosion")
                 explosion.Position = hrp.Position
-                explosion.BlastRadius = 15 -- Raio de destruição
-                explosion.BlastPressure = 1000000 -- Força do impacto (vai voar longe)
+                explosion.BlastRadius = 15
+                explosion.BlastPressure = 1000000 -- Força máxima para desmembrar o corpo
                 explosion.Parent = workspace
                 
-                -- 2. Som da explosão (bem alto para o player)
+                -- Som de explosão de alta qualidade
                 local sound = Instance.new("Sound", hrp)
-                sound.SoundId = "rbxassetid://142070127" 
-                sound.Volume = 10
+                sound.SoundId = "rbxassetid://142070127"
+                sound.Volume = 8
                 sound:Play()
                 
-                -- 3. Garante que o personagem se quebre (desmembrar)
+                -- Garante que o jogador morra se a explosão não o fizer
                 if hum then
-                    hum.Health = 0 -- Mata o player
+                    hum.Health = 0
                 end
-                
-                -- Limpeza do som
-                task.delay(3, function() if sound then sound:Destroy() end end)
             end
             
         -- [[ COMANDOS EXTRAS ]]
@@ -6141,6 +6138,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
