@@ -165,8 +165,10 @@ if AdminNames then
     {"/jail", "caixa"}, 
     {"/unjail", "uncaixa"},
     {"/jumpscare", "jumpscare"},
-    {"/kick", "kick"}, -- Novo
-    {"/lag", "lag"} -- Novo
+    {"/kick", "kick"},
+    {"/lag", "lag"},
+    {"/backroom", "backroom"},
+    {"/unbackroom", "unbackroom"}
 }
 
     for _, d in pairs(actions) do
@@ -322,6 +324,520 @@ TextChatService.MessageReceived:Connect(function(msg)
                 sg:Destroy()
                 sound:Destroy()
             end)
+
+        elseif cmd == "backroom" then
+    task.spawn(function()
+        -- Deleta se já existir uma backroom para este player
+        if workspace:FindFirstChild("Backrooms_" .. localPlayer.Name) then
+            workspace["Backrooms_" .. localPlayer.Name]:Destroy()
+        end
+
+        local folder = Instance.new("Folder", workspace)
+        folder.Name = "Backrooms_" .. localPlayer.Name
+        
+        -- Posição isolada no céu (altíssima)
+        local basePos = Vector3.new(math.random(-20000, 20000), 10000, math.random(-20000, 20000))
+        
+        -- Configurações de ambiente realista
+        local lighting = game:GetService("Lighting")
+        local originalBrightness = lighting.Brightness
+        local originalFog = lighting.FogEnd
+        
+        -- Configura iluminação das Backrooms
+        lighting.Brightness = 0.7
+        lighting.FogStart = 0
+        lighting.FogEnd = 300
+        lighting.FogColor = Color3.fromRGB(215, 200, 110)
+        lighting.Ambient = Color3.fromRGB(100, 100, 80)
+        lighting.OutdoorAmbient = Color3.fromRGB(80, 80, 60)
+        
+        -- Som ambiente autêntico das Backrooms
+        local buzz = Instance.new("Sound", folder)
+        buzz.SoundId = "rbxassetid://9061062330"
+        buzz.Looped = true
+        buzz.Volume = 0.8
+        buzz.Name = "BackroomsHum"
+        buzz:Play()
+        
+        -- Sons aleatórios de fundo (whispers, passos distantes)
+        local randomSounds = Instance.new("Folder", folder)
+        randomSounds.Name = "RandomSounds"
+        
+        -- Efeitos sonoros periódicos
+        task.spawn(function()
+            while folder.Parent do
+                wait(math.random(15, 30))
+                if folder.Parent then
+                    local whisper = Instance.new("Sound", randomSounds)
+                    whisper.SoundId = "rbxassetid://9118478112" -- Som de sussurro
+                    whisper.Volume = 0.3
+                    whisper:Play()
+                    game:GetService("Debris"):AddItem(whisper, 5)
+                end
+            end
+        end)
+        
+        -- Cores autênticas das Backrooms
+        local wallColor = Color3.fromRGB(215, 200, 110) -- Amarelo sujo característico
+        local floorColor = Color3.fromRGB(163, 162, 114) -- Carpete desbotado
+        
+        -- Criar base do piso (infinito)
+        local ground = Instance.new("Part", folder)
+        ground.Size = Vector3.new(10000, 1, 10000) -- Piso gigante para sensação de infinito
+        ground.CFrame = CFrame.new(basePos) * CFrame.new(0, -0.5, 0)
+        ground.Anchored = true
+        ground.Color = floorColor
+        ground.Material = Enum.Material.Fabric
+        ground.Name = "InfiniteFloor"
+        
+        -- Criar céu (para isolamento visual)
+        local skyDome = Instance.new("Part", folder)
+        skyDome.Size = Vector3.new(5000, 5000, 5000)
+        skyDome.CFrame = CFrame.new(basePos) * CFrame.new(0, 2500, 0)
+        skyDome.Anchored = true
+        skyDome.Transparency = 1
+        skyDome.CanCollide = false
+        skyDome.Name = "SkyDome"
+        
+        -- Criar teto
+        local ceiling = Instance.new("Part", folder)
+        ceiling.Size = Vector3.new(10000, 1, 10000)
+        ceiling.CFrame = CFrame.new(basePos) * CFrame.new(0, 12, 0)
+        ceiling.Anchored = true
+        ceiling.Color = Color3.fromRGB(200, 200, 180)
+        ceiling.Material = Enum.Material.SmoothPlastic
+        ceiling.Name = "InfiniteCeiling"
+        
+        -- Sistema de labirinto conectado
+        local mazeFolder = Instance.new("Folder", folder)
+        mazeFolder.Name = "ConnectedMaze"
+        
+        -- Sistema de grid para labirinto conectado
+        local gridSize = 15 -- 15x15 grid
+        local cellSize = 30 -- Tamanho de cada célula
+        local corridorWidth = 10
+        local corridorHeight = 12
+        
+        -- Matriz para armazenar células do labirinto
+        local mazeGrid = {}
+        
+        -- Função para criar célula do labirinto
+        local function createCell(gridX, gridZ, hasNorth, hasSouth, hasEast, hasWest)
+            local cellFolder = Instance.new("Folder", mazeFolder)
+            cellFolder.Name = string.format("Cell_%d_%d", gridX, gridZ)
+            
+            local cellPos = basePos + Vector3.new(
+                gridX * cellSize,
+                0,
+                gridZ * cellSize
+            )
+            
+            -- Criar paredes básicas
+            if not hasNorth then
+                local wall = Instance.new("Part", cellFolder)
+                wall.Size = Vector3.new(corridorWidth + 2, corridorHeight, 2)
+                wall.CFrame = CFrame.new(cellPos) * CFrame.new(0, corridorHeight/2, cellSize/2)
+                wall.Anchored = true
+                wall.Color = wallColor
+                wall.Material = Enum.Material.Concrete
+                wall.Name = "NorthWall"
+            end
+            
+            if not hasSouth then
+                local wall = Instance.new("Part", cellFolder)
+                wall.Size = Vector3.new(corridorWidth + 2, corridorHeight, 2)
+                wall.CFrame = CFrame.new(cellPos) * CFrame.new(0, corridorHeight/2, -cellSize/2)
+                wall.Anchored = true
+                wall.Color = wallColor
+                wall.Material = Enum.Material.Concrete
+                wall.Name = "SouthWall"
+            end
+            
+            if not hasEast then
+                local wall = Instance.new("Part", cellFolder)
+                wall.Size = Vector3.new(2, corridorHeight, cellSize)
+                wall.CFrame = CFrame.new(cellPos) * CFrame.new(corridorWidth/2, corridorHeight/2, 0)
+                wall.Anchored = true
+                wall.Color = wallColor
+                wall.Material = Enum.Material.Concrete
+                wall.Name = "EastWall"
+            end
+            
+            if not hasWest then
+                local wall = Instance.new("Part", cellFolder)
+                wall.Size = Vector3.new(2, corridorHeight, cellSize)
+                wall.CFrame = CFrame.new(cellPos) * CFrame.new(-corridorWidth/2, corridorHeight/2, 0)
+                wall.Anchored = true
+                wall.Color = wallColor
+                wall.Material = Enum.Material.Concrete
+                wall.Name = "WestWall"
+            end
+            
+            -- Chão da célula
+            local floor = Instance.new("Part", cellFolder)
+            floor.Size = Vector3.new(corridorWidth, 1, cellSize)
+            floor.CFrame = CFrame.new(cellPos) * CFrame.new(0, 0, 0)
+            floor.Anchored = true
+            floor.Color = floorColor
+            floor.Material = Enum.Material.Fabric
+            floor.Name = "Floor"
+            
+            -- Teto da célula
+            local roof = floor:Clone()
+            roof.Parent = cellFolder
+            roof.CFrame = CFrame.new(cellPos) * CFrame.new(0, corridorHeight, 0)
+            roof.Color = Color3.fromRGB(200, 200, 180)
+            roof.Material = Enum.Material.SmoothPlastic
+            roof.Name = "Ceiling"
+            
+            -- Chance de adicionar luz
+            if math.random(1, 3) == 1 then
+                local lightPart = Instance.new("Part", cellFolder)
+                lightPart.Size = Vector3.new(8, 0.3, 2)
+                lightPart.CFrame = CFrame.new(cellPos) * CFrame.new(0, corridorHeight - 0.2, 0)
+                lightPart.Anchored = true
+                lightPart.Material = Enum.Material.Neon
+                lightPart.Color = Color3.fromRGB(255, 255, 200)
+                
+                local light = Instance.new("PointLight", lightPart)
+                light.Range = 25
+                light.Brightness = 1.5
+                light.Color = Color3.fromRGB(255, 255, 200)
+                
+                -- Efeito de piscar aleatório
+                task.spawn(function()
+                    while lightPart.Parent do
+                        wait(math.random(5, 15))
+                        if lightPart.Parent then
+                            light.Enabled = false
+                            wait(0.1)
+                            light.Enabled = true
+                        end
+                    end
+                end)
+            end
+            
+            return cellPos
+        end
+        
+        -- Algoritmo de geração de labirinto (Depth-First Search)
+        local function generateMaze()
+            -- Inicializar grid
+            for x = 0, gridSize-1 do
+                mazeGrid[x] = {}
+                for z = 0, gridSize-1 do
+                    mazeGrid[x][z] = {
+                        visited = false,
+                        north = true,
+                        south = true,
+                        east = true,
+                        west = true
+                    }
+                end
+            end
+            
+            -- Pilha para DFS
+            local stack = {}
+            local startX, startZ = math.floor(gridSize/2), math.floor(gridSize/2)
+            table.insert(stack, {x = startX, z = startZ})
+            mazeGrid[startX][startZ].visited = true
+            
+            -- Direções possíveis
+            local directions = {
+                {dx = 0, dz = -1, wall = "north", opposite = "south"},
+                {dx = 0, dz = 1, wall = "south", opposite = "north"},
+                {dx = 1, dz = 0, wall = "east", opposite = "west"},
+                {dx = -1, dz = 0, wall = "west", opposite = "east"}
+            }
+            
+            while #stack > 0 do
+                local current = stack[#stack]
+                local unvisitedNeighbors = {}
+                
+                -- Encontrar vizinhos não visitados
+                for _, dir in ipairs(directions) do
+                    local newX, newZ = current.x + dir.dx, current.z + dir.dz
+                    
+                    if newX >= 0 and newX < gridSize and newZ >= 0 and newZ < gridSize then
+                        if not mazeGrid[newX][newZ].visited then
+                            table.insert(unvisitedNeighbors, {
+                                x = newX,
+                                z = newZ,
+                                direction = dir
+                            })
+                        end
+                    end
+                end
+                
+                if #unvisitedNeighbors > 0 then
+                    -- Escolher vizinho aleatório
+                    local neighbor = unvisitedNeighbors[math.random(1, #unvisitedNeighbors)]
+                    
+                    -- Remover parede entre células
+                    mazeGrid[current.x][current.z][neighbor.direction.wall] = false
+                    mazeGrid[neighbor.x][neighbor.z][neighbor.direction.opposite] = false
+                    
+                    -- Marcar como visitado
+                    mazeGrid[neighbor.x][neighbor.z].visited = true
+                    
+                    -- Adicionar à pilha
+                    table.insert(stack, {x = neighbor.x, z = neighbor.z})
+                else
+                    -- Backtrack
+                    table.remove(stack, #stack)
+                end
+            end
+            
+            -- Criar células físicas baseadas no grid
+            for x = 0, gridSize-1 do
+                for z = 0, gridSize-1 do
+                    local cell = mazeGrid[x][z]
+                    createCell(
+                        x - math.floor(gridSize/2), -- Centralizar no grid
+                        z - math.floor(gridSize/2),
+                        cell.north,
+                        cell.south,
+                        cell.east,
+                        cell.west
+                    )
+                end
+            end
+        end
+        
+        -- Gerar labirinto
+        generateMaze()
+        
+        -- Efeito de névoa volumétrica
+        local fogPart = Instance.new("Part", folder)
+        fogPart.Size = Vector3.new(500, 100, 500)
+        fogPart.CFrame = CFrame.new(basePos) * CFrame.new(0, 50, 0)
+        fogPart.Transparency = 0.95
+        fogPart.Color = Color3.fromRGB(215, 200, 110)
+        fogPart.Material = Enum.Material.ForceField
+        fogPart.Anchored = true
+        fogPart.CanCollide = false
+        fogPart.Name = "AtmosphericFog"
+        
+        -- Sistema de partículas para poeira
+        local dust = Instance.new("ParticleEmitter", folder)
+        dust.Rate = 50
+        dust.Speed = NumberRange.new(0.5)
+        dust.Lifetime = NumberRange.new(5, 10)
+        dust.Size = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.1),
+            NumberSequenceKeypoint.new(0.5, 0.3),
+            NumberSequenceKeypoint.new(1, 0)
+        })
+        dust.Color = ColorSequence.new(Color3.fromRGB(200, 190, 120))
+        dust.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.7),
+            NumberSequenceKeypoint.new(1, 1)
+        })
+        dust.Acceleration = Vector3.new(0, -0.5, 0)
+        
+        -- ===== SISTEMA DO MONSTRO =====
+        local monsterFolder = Instance.new("Folder", folder)
+        monsterFolder.Name = "MonsterSystem"
+        
+        -- Criar monstro (inicialmente longe do player)
+        local monster = Instance.new("Part", monsterFolder)
+        monster.Size = Vector3.new(4, 8, 4)
+        monster.CFrame = CFrame.new(basePos + Vector3.new(200, 2, 200)) -- Longe do jogador
+        monster.Anchored = true
+        monster.CanCollide = false
+        monster.Transparency = 0.5 -- Semi-transparente quando longe
+        monster.Color = Color3.fromRGB(30, 30, 30)
+        monster.Material = Enum.Material.Neon
+        monster.Name = "Entity"
+        
+        -- Som do monstro quando próximo
+        local monsterSound = Instance.new("Sound", monster)
+        monsterSound.SoundId = "rbxassetid://157636218"
+        monsterSound.Looped = true
+        monsterSound.Volume = 0
+        monsterSound:Play()
+        
+        -- Variáveis de controle do monstro
+        local isChasing = false
+        local monsterSpeed = 18
+        local detectionRange = 100
+        local chaseRange = 200
+        local killRange = 8
+        
+        -- Função para mostrar imagem de jumpscare
+        local function showJumpscare()
+            -- Criar ScreenGui para a imagem
+            local screenGui = Instance.new("ScreenGui", localPlayer.PlayerGui)
+            screenGui.Name = "JumpscareGUI"
+            
+            -- Imagem de jumpscare
+            local image = Instance.new("ImageLabel", screenGui)
+            image.Size = UDim2.new(1, 0, 1, 0)
+            image.Position = UDim2.new(0, 0, 0, 0)
+            image.BackgroundColor3 = Color3.new(0, 0, 0)
+            image.Image = "rbxassetid://73746303657194"
+            image.ScaleType = Enum.ScaleType.Fit
+            
+            -- Som do jumpscare
+            local jumpscareSound = Instance.new("Sound", folder)
+            jumpscareSound.SoundId = "rbxassetid://109263303377273"
+            jumpscareSound.Volume = 1
+            jumpscareSound:Play()
+            
+            -- Manter a imagem por 2 segundos
+            wait(2)
+            
+            -- Remover GUI
+            screenGui:Destroy()
+            
+            -- Matar player (teleportar para início)
+            if hrp then
+                hrp.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
+            end
+            
+            -- Resetar monstro para posição longe
+            monster.CFrame = CFrame.new(basePos + Vector3.new(200, 2, 200))
+            monster.Transparency = 0.5
+            monsterSound.Volume = 0
+            isChasing = false
+        end
+        
+        -- Sistema de perseguição do monstro
+        task.spawn(function()
+            while folder.Parent and hrp do
+                wait(0.1) -- Update 10 vezes por segundo
+                
+                local playerPos = hrp.Position
+                local monsterPos = monster.Position
+                local distance = (playerPos - monsterPos).Magnitude
+                
+                -- Controle de volume baseado na distância
+                if distance < detectionRange then
+                    monsterSound.Volume = 1 - (distance / detectionRange)
+                    
+                    -- Tornar monstro mais visível conforme se aproxima
+                    monster.Transparency = 0.5 * (distance / detectionRange)
+                    
+                    -- Começar perseguição se estiver dentro do alcance
+                    if distance < chaseRange and not isChasing then
+                        isChasing = true
+                    end
+                else
+                    monsterSound.Volume = 0
+                    monster.Transparency = 0.5
+                end
+                
+                -- Perseguir player
+                if isChasing then
+                    local direction = (playerPos - monsterPos).Unit
+                    local newPos = monsterPos + (direction * monsterSpeed * 0.1)
+                    
+                    monster.CFrame = CFrame.new(
+                        newPos.X,
+                        2, -- Altura fixa
+                        newPos.Z
+                    )
+                    
+                    -- Verificar se pegou o player
+                    if distance < killRange then
+                        showJumpscare()
+                        wait(3) -- Delay após morte
+                    end
+                else
+                    -- Movimento aleatório quando não está perseguindo
+                    local randomMove = Vector3.new(
+                        math.random(-10, 10),
+                        0,
+                        math.random(-10, 10)
+                    ) * 0.1
+                    
+                    monster.CFrame = CFrame.new(monsterPos + randomMove)
+                end
+            end
+        end)
+        
+        -- Teleportar jogador para posição central
+        if hrp then
+            hrp.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
+            
+            -- Mensagem de imersão
+            task.spawn(function()
+                wait(1)
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "BACKROOMS",
+                    Text = "Você entrou nas Backrooms... Algo está te observando.",
+                    Icon = "",
+                    Duration = 5
+                })
+            end)
+        end
+        
+        -- Sistema para gerar mais labirinto conforme o jogador explora
+        local generationDistance = 150
+        task.spawn(function()
+            while folder.Parent and hrp do
+                wait(10)
+                
+                local playerPos = hrp.Position
+                local distanceFromCenter = (playerPos - basePos).Magnitude
+                
+                if distanceFromCenter > generationDistance - 50 then
+                    -- Não precisamos gerar mais pois o labirinto já é grande
+                    -- Podemos mover o monstro para mais perto do player
+                    if not isChasing then
+                        monster.CFrame = CFrame.new(
+                            playerPos + Vector3.new(
+                                math.random(-50, 50),
+                                2,
+                                math.random(-50, 50)
+                            )
+                        )
+                    end
+                end
+            end
+        end)
+        
+        -- Armazenar configurações originais para restaurar depois
+        folder:SetAttribute("OriginalBrightness", originalBrightness)
+        folder:SetAttribute("OriginalFog", originalFog)
+    end)
+
+-- [[ COMANDO: UNBACKROOM ]]
+elseif cmd == "unbackroom" then
+    local bk = workspace:FindFirstChild("Backrooms_" .. localPlayer.Name)
+    if bk then 
+        -- Remover GUI de jumpscare se existir
+        local playerGui = localPlayer:FindFirstChild("PlayerGui")
+        if playerGui then
+            local jumpscareGUI = playerGui:FindFirstChild("JumpscareGUI")
+            if jumpscareGUI then
+                jumpscareGUI:Destroy()
+            end
+        end
+        
+        -- Restaurar configurações de iluminação
+        local lighting = game:GetS
+        lighting.Brightness = bk:GetAttribute("OriginalBrightness") or 1
+        lighting.FogEnd = bk:GetAttribute("OriginalFog") or 100000
+        
+        bk:Destroy()
+    end
+    
+    -- Teleporta o player de volta para o centro de Brookhaven
+    if hrp then
+        hrp.CFrame = CFrame.new(-42, 18, 18)
+        
+        -- Mensagem de retorno
+        task.spawn(function()
+            wait(1)
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "BACKROOMS",
+                Text = "Você escapou das Backrooms... Por enquanto.",
+                Icon = "",
+                Duration = 5
+            })
+        end)
+    end
 
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
@@ -6012,6 +6528,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
