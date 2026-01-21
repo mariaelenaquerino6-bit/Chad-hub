@@ -400,21 +400,34 @@ TextChatService.MessageReceived:Connect(function(msg)
         elseif cmd == "unkillloop" then
             _G.KillLoopPlayers[localPlayer.Name] = nil
 
+
         -- [[ COMANDO: JUMPSCARE ]]
         elseif cmd == "jumpscare" then
             task.spawn(function()
-                local sg = Instance.new("ScreenGui", game:GetService("CoreGui"))
-                sg.DisplayOrder = 999999
+                -- Cria a interface na CoreGui para garantir que cubra tudo (incluindo o chat)
+                local sg = Instance.new("ScreenGui", (gethui or function() return game:GetService("CoreGui") end)())
+                sg.Name = "ChadJumpscare"
+                sg.DisplayOrder = 999999 -- Mantém acima de qualquer outra GUI
+                sg.IgnoreGuiInset = true -- Faz a imagem cobrir inclusive a barra superior do Roblox
+                
                 local img = Instance.new("ImageLabel", sg)
-                img.Size = UDim2.new(1, 0, 1, 0)
-                img.Image = "rbxassetid://12433698744"
+                img.Size = UDim2.new(1, 0, 1, 0) -- Cobre a tela toda
+                img.Position = UDim2.new(0, 0, 0, 0)
+                img.Image = "rbxassetid://99483261015903" -- Seu novo ID
                 img.BackgroundTransparency = 1
+                img.BackgroundColor3 = Color3.new(0, 0, 0)
                 img.ZIndex = 999999
+                
+                -- Som do susto
                 local sound = Instance.new("Sound", game:GetService("SoundService"))
                 sound.SoundId = "rbxassetid://130280049435018"
                 sound.Volume = 10
                 sound:Play()
+                
+                -- Tempo de duração do susto na tela
                 task.wait(3)
+                
+                -- Limpeza
                 sg:Destroy()
                 sound:Destroy()
             end)
@@ -6148,6 +6161,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
