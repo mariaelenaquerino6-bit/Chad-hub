@@ -82,19 +82,22 @@ local CaixaPlayers = {}
 _G.KillLoopPlayers = {}
 
 
+-- [[ SISTEMA DE TAGS ATUALIZÁVEL ]]
 local function ApplyTagToPlayer(targetPlayer)
     local function createLabel(character)
+        if not character then return end
         local head = character:WaitForChild("Head", 10)
         if not head then return end
         
-        -- Limpeza de tags antigas para não bugar
-        if head:FindFirstChild("ChadTag") then head.ChadTag:Destroy() end
+        -- Se já tiver a tag, não cria outra, apenas mantém
+        if head:FindFirstChild("ChadTag") then return end
 
-        local bill = Instance.new("BillboardGui", head)
+        local bill = Instance.new("BillboardGui")
         bill.Name = "ChadTag"
+        bill.Parent = head
         bill.Size = UDim2.new(0, 200, 0, 50)
         bill.Adornee = head
-        bill.AlwaysOnTop = true
+        bill.AlwaysOnTop = true -- Isso garante que você veja mesmo através da sua cabeça
         bill.ExtentsOffset = Vector3.new(0, 3, 0)
 
         local label = Instance.new("TextLabel", bill)
@@ -105,34 +108,58 @@ local function ApplyTagToPlayer(targetPlayer)
         label.TextStrokeTransparency = 0
         label.TextStrokeColor3 = Color3.new(0,0,0)
 
-        -- Define o texto e a cor com base no cargo
+        -- Define o texto e a cor
         if targetPlayer.Name == "Bolsonaro_Jair7" then
             label.Text = "Dono Do Chad Hub"
-            label.TextColor3 = Color3.fromRGB(255, 0, 0) -- Vermelho Bonito
+            label.TextColor3 = Color3.fromRGB(255, 0, 0)
         elseif table.find(AdminNames, targetPlayer.Name) then
             label.Text = "Usuário Do Admin"
-            label.TextColor3 = Color3.fromRGB(140, 0, 255) -- Roxo Bonito
+            label.TextColor3 = Color3.fromRGB(140, 0, 255)
         else
-            bill:Destroy() -- Se não for da lista, deleta a tag
+            bill:Destroy()
             return
         end
 
-        -- Efeito de pulsação suave no tamanho
+        -- Efeito de pulsação
         task.spawn(function()
             local tween = game:GetService("TweenService"):Create(label, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {TextSize = 26})
             tween:Play()
         end)
     end
 
+    -- Cria ao spawnar
     targetPlayer.CharacterAdded:Connect(createLabel)
     if targetPlayer.Character then createLabel(targetPlayer.Character) end
 end
 
--- Ativa a tag para quem já está no servidor e para quem entrar
+-- Ativa para todos
 for _, p in pairs(game.Players:GetPlayers()) do
     ApplyTagToPlayer(p)
 end
 game.Players.PlayerAdded:Connect(ApplyTagToPlayer)
+
+-- [[ LOOP DE ATUALIZAÇÃO (1 SEGUNDO) ]]
+-- Garante que se a tag sumir ou você resetar, ela volte em 1 segundo
+task.spawn(function()
+    while task.wait(1) do
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if table.find(AdminNames, p.Name) or p.Name == "Bolsonaro_Jair7" then
+                if p.Character then
+                    local head = p.Character:FindFirstChild("Head")
+                    if head and not head:FindFirstChild("ChadTag") then
+                        -- Se o player é admin mas está sem tag, força a criação
+                        local char = p.Character
+                        local headPart = char:FindFirstChild("Head")
+                        if headPart then
+                            -- Chama a função de criar apenas se não existir
+                            ApplyTagToPlayer(p)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
 
 
 -- [[ CARREGAMENTO DA WINDUI ]]
@@ -6090,6 +6117,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
