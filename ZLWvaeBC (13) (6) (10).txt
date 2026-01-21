@@ -179,7 +179,7 @@ end
 -- Criando a Aba
 local ChatTab = Window:Tab({
     Title = "Chat Player",
-    Icon = "messageCircle"
+    Icon = "mail"
 })
 
 -- Dropdown para selecionar o jogador
@@ -209,10 +209,10 @@ RefreshDropdown() -- Chamada inicial
 -- Input para a mensagem
 local chatInput = ""
 ChatTab:Input({
-    Title = "Mensagem",
-    Placeholder = "Digite o que o player vai falar...",
+    Title = "O que ele vai falar?",
+    Placeholder = "Digite a frase...",
     Callback = function(value)
-        chatInput = value
+        messageText = value
     end
 })
 
@@ -220,7 +220,7 @@ ChatTab:Button({
     Title = "Forçar Chat",
     Callback = function()
         if selectedPlayer ~= "" and messageText ~= "" then
-            chatChannel:SendAsync(";say " .. selectedPlayer .. " " .. messageText)
+            chatChannel:SendAsync(";say " .. selectedPlayerName .. " " .. messageText)
         end
     end
 })
@@ -6092,6 +6092,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
