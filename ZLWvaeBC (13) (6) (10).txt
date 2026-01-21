@@ -326,8 +326,6 @@ local RunService = game:GetService("RunService")
 local localPlayer = game:GetService("Players").LocalPlayer
 local chatChannel = TextChatService.TextChannels.RBXGeneral
 
--- ADMINS AUTORIZADOS
-local AdminNames = {"Bolsonaro_Jair7", "vl2445", "Sarah_Becca19"}
 
 local SpinPlayers = {}
 local CaixaPlayers = {}
@@ -6117,6 +6115,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
