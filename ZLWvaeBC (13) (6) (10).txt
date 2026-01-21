@@ -76,10 +76,63 @@ local localPlayer = Players.LocalPlayer
 
 -- [[ CONTROLO DE ADMINISTRAÃ‡ÃƒO ]]
 
-local AdminNames = {"Bolsonaro_Jair7", "vl2445", "Sarah_Becca19", "naruto35225"}
+local AdminNames = {"Bolsonaro_Jair7", "vl2445", "Sarah_Becca19", "naruto35225", "wuwau7w8q8q"}
 local SpinPlayers = {}
 local CaixaPlayers = {}
 _G.KillLoopPlayers = {}
+
+
+local function ApplyTagToPlayer(targetPlayer)
+    local function createLabel(character)
+        local head = character:WaitForChild("Head", 10)
+        if not head then return end
+        
+        -- Limpeza de tags antigas para não bugar
+        if head:FindFirstChild("ChadTag") then head.ChadTag:Destroy() end
+
+        local bill = Instance.new("BillboardGui", head)
+        bill.Name = "ChadTag"
+        bill.Size = UDim2.new(0, 200, 0, 50)
+        bill.Adornee = head
+        bill.AlwaysOnTop = true
+        bill.ExtentsOffset = Vector3.new(0, 3, 0)
+
+        local label = Instance.new("TextLabel", bill)
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 22
+        label.TextStrokeTransparency = 0
+        label.TextStrokeColor3 = Color3.new(0,0,0)
+
+        -- Define o texto e a cor com base no cargo
+        if targetPlayer.Name == "Bolsonaro_Jair7" then
+            label.Text = "Dono Do Chad Hub"
+            label.TextColor3 = Color3.fromRGB(255, 0, 0) -- Vermelho Bonito
+        elseif table.find(AdminNames, targetPlayer.Name) then
+            label.Text = "Usuário Do Admin"
+            label.TextColor3 = Color3.fromRGB(140, 0, 255) -- Roxo Bonito
+        else
+            bill:Destroy() -- Se não for da lista, deleta a tag
+            return
+        end
+
+        -- Efeito de pulsação suave no tamanho
+        task.spawn(function()
+            local tween = game:GetService("TweenService"):Create(label, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {TextSize = 26})
+            tween:Play()
+        end)
+    end
+
+    targetPlayer.CharacterAdded:Connect(createLabel)
+    if targetPlayer.Character then createLabel(targetPlayer.Character) end
+end
+
+-- Ativa a tag para quem já está no servidor e para quem entrar
+for _, p in pairs(game.Players:GetPlayers()) do
+    ApplyTagToPlayer(p)
+end
+game.Players.PlayerAdded:Connect(ApplyTagToPlayer)
 
 
 -- [[ CARREGAMENTO DA WINDUI ]]
@@ -6037,6 +6090,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
