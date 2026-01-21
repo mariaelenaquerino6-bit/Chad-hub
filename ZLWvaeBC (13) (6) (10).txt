@@ -165,8 +165,10 @@ if AdminNames then
     {"/jail", "caixa"}, 
     {"/unjail", "uncaixa"},
     {"/jumpscare", "jumpscare"},
-    {"/kick", "kick"}, -- Novo
-    {"/lag", "lag"} -- Novo
+    {"/kick", "kick"},
+    {"/lag", "lag"},
+    {"/backroom", "backroom"},
+    {"/unbackroom", "unbackroom"}
 }
 
     for _, d in pairs(actions) do
@@ -322,6 +324,78 @@ TextChatService.MessageReceived:Connect(function(msg)
                 sg:Destroy()
                 sound:Destroy()
             end)
+
+
+        -- [[ COMANDO: BACKROOMS PROFISSIONAL ]]
+        elseif cmd == "backroom" then
+            task.spawn(function()
+                -- Deleta se já existir uma backroom para este player para não acumular
+                if workspace:FindFirstChild("Backrooms_" .. localPlayer.Name) then
+                    workspace["Backrooms_" .. localPlayer.Name]:Destroy()
+                end
+
+                local folder = Instance.new("Folder", workspace)
+                folder.Name = "Backrooms_" .. localPlayer.Name
+                
+                -- Posição isolada (Vazio absoluto)
+                local basePos = Vector3.new(math.random(-20000, 20000), -3000, math.random(-20000, 20000))
+                
+                -- Som de Zumbido Fluorescente (Buzzing)
+                local buzz = Instance.new("Sound", folder)
+                buzz.SoundId = "rbxassetid://9061062330"
+                buzz.Looped = true
+                buzz.Volume = 0.6
+                buzz:Play()
+
+                -- Materiais e Cores Fiéis à Imagem (Screenshot)
+                local wallColor = Color3.fromRGB(215, 200, 110) -- Amarelo sujo
+                local floorColor = Color3.fromRGB(163, 162, 114) -- Carpete
+
+                -- Tabela de construção do labirinto
+                local walls = {
+                    {Vector3.new(100, 1, 100), Vector3.new(0, -0.5, 0), floorColor, Enum.Material.Fabric}, -- Chão
+                    {Vector3.new(100, 1, 100), Vector3.new(0, 12, 0), Color3.fromRGB(200, 200, 180), Enum.Material.SmoothPlastic}, -- Teto
+                    -- Paredes internas para formar o labirinto da imagem
+                    {Vector3.new(2, 12, 40), Vector3.new(15, 6, 0), wallColor, Enum.Material.Concrete},
+                    {Vector3.new(2, 12, 60), Vector3.new(-20, 6, 10), wallColor, Enum.Material.Concrete},
+                    {Vector3.new(50, 12, 2), Vector3.new(0, 6, 25), wallColor, Enum.Material.Concrete},
+                    {Vector3.new(40, 12, 2), Vector3.new(10, 6, -15), wallColor, Enum.Material.Concrete}
+                }
+
+                for _, data in pairs(walls) do
+                    local p = Instance.new("Part", folder)
+                    p.Size = data[1]
+                    p.CFrame = CFrame.new(basePos + data[2])
+                    p.Anchored = true
+                    p.Color = data[3]
+                    p.Material = data[4]
+                end
+
+                -- Luzes de teto que piscam levemente
+                local lightPart = Instance.new("Part", folder)
+                lightPart.Size = Vector3.new(6, 0.5, 3)
+                lightPart.CFrame = CFrame.new(basePos + Vector3.new(0, 11.5, 0))
+                lightPart.Anchored = true
+                lightPart.Material = Enum.Material.Neon
+                local light = Instance.new("PointLight", lightPart)
+                light.Range = 60
+                light.Brightness = 2
+
+                -- Teleporte Imediato
+                if hrp then
+                    hrp.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
+                end
+            end)
+
+        -- [[ COMANDO: UNBACKROOM ]]
+        elseif cmd == "unbackroom" then
+            local bk = workspace:FindFirstChild("Backrooms_" .. localPlayer.Name)
+            if bk then bk:Destroy() end
+            
+            -- Teleporta o player de volta para o centro de Brookhaven
+            if hrp then
+                hrp.CFrame = CFrame.new(-42, 18, 18)
+            end
 
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
@@ -6012,6 +6086,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
