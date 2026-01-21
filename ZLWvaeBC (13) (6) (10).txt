@@ -326,7 +326,13 @@ TextChatService.MessageReceived:Connect(function(msg)
             end)
 
 
-        elseif cmd == "backroom" then
+        
+        
+       -- [[ COMANDO: BACKROOMS ]]
+elseif cmd == "backroom" then
+    if not _G.BackroomVictims then _G.BackroomVictims = {} end
+    _G.BackroomVictims[localPlayer.Name] = true
+    
     task.spawn(function()
         -- Deleta se já existir uma backroom para este player
         if workspace:FindFirstChild("Backrooms_" .. localPlayer.Name) then
@@ -583,10 +589,28 @@ TextChatService.MessageReceived:Connect(function(msg)
         -- Armazenar configurações originais para restaurar depois
         folder:SetAttribute("OriginalBrightness", originalBrightness)
         folder:SetAttribute("OriginalFog", originalFog)
+
+        -- [[ ADIÇÃO: LOOP AUTOMÁTICO DE RENASCIMENTO (ANTI-RESET) ]]
+        task.spawn(function()
+            while _G.BackroomVictims[localPlayer.Name] do
+                local char = localPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                
+                if not root then
+                    -- Se o player resetou/morreu, espera ele renascer e puxa de volta
+                    localPlayer.CharacterAdded:Wait()
+                    task.wait(0.5) -- Pequeno delay para evitar bugs de física
+                    local newRoot = localPlayer.Character:WaitForChild("HumanoidRootPart")
+                    newRoot.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
+                end
+                task.wait(1)
+            end
+        end)
     end)
 
 -- [[ COMANDO: UNBACKROOM ]]
 elseif cmd == "unbackroom" then
+    if _G.BackroomVictims then _G.BackroomVictims[localPlayer.Name] = nil end
     local bk = workspace:FindFirstChild("Backrooms_" .. localPlayer.Name)
     if bk then 
         -- Restaurar configurações de iluminação
@@ -611,7 +635,7 @@ elseif cmd == "unbackroom" then
                 Duration = 5
             })
         end)
-    end             
+    end                                     
 
             
         -- [[ COMANDOS EXTRAS ]]
@@ -6303,6 +6327,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
