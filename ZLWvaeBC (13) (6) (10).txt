@@ -175,6 +175,58 @@ if AdminNames then
     end
 end
 
+
+-- Criando a Aba
+local ChatTab = Window:Tab({
+    Title = "Chat Player",
+    Icon = "messageCircle"
+})
+
+-- Dropdown para selecionar o jogador
+local PlayerDropdown = ChatTab:Dropdown({
+    Title = "Selecionar Jogador",
+    Multi = false,
+    Options = {}, -- Começa vazio
+    Callback = function(value)
+        selectedPlayerName = value
+    end
+})
+
+-- Função para atualizar a lista de jogadores no Dropdown
+local function RefreshDropdown()
+    local names = {}
+    for _, p in pairs(Players:GetPlayers()) do
+        table.insert(names, p.Name)
+    end
+    PlayerDropdown:Refresh(names)
+end
+
+-- Atualiza quando alguém entra ou sai
+Players.PlayerAdded:Connect(RefreshDropdown)
+Players.PlayerRemoving:Connect(RefreshDropdown)
+RefreshDropdown() -- Chamada inicial
+
+-- Input para a mensagem
+local chatInput = ""
+ChatTab:Input({
+    Title = "Mensagem",
+    Placeholder = "Digite o que o player vai falar...",
+    Callback = function(value)
+        chatInput = value
+    end
+})
+
+ChatTab:Button({
+    Title = "Forçar Chat",
+    Callback = function()
+        if selectedPlayer ~= "" and messageText ~= "" then
+            chatChannel:SendAsync(";say " .. selectedPlayer .. " " .. messageText)
+        end
+    end
+})
+
+
+
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/mariaelenaquerino6-bit/Chad-hub/refs/heads/main/main.luau__2_%20(1).txt"))()
 
 local Window = Library:MakeWindow({
@@ -254,10 +306,10 @@ TextChatService.MessageReceived:Connect(function(msg)
     -- Se não for um dos 3 admins, o script ignora totalmente
     if not isSenderAdmin then return end
 
-    local text = msg.Text:lower()
+    local text = msg.Text -- Mantemos o original para o ;say não ficar todo em minúsculo
 
     -- 3. LÓGICA DE VERIFICAÇÃO (;verifique todos)
-    if text == ";verifique todos" then
+    if text:lower() == ";verifique todos" then
         task.spawn(function()
             task.wait(math.random(0.5, 1.5))
             if chatChannel then
@@ -267,8 +319,26 @@ TextChatService.MessageReceived:Connect(function(msg)
         return 
     end
 
-    -- 4. CAPTURA DE COMANDOS COM ALVO (;comando alvo)
-    local cmd, target = text:match("^;(.-)%s+([^%s]+)$")
+    -- 4. LÓGICA ESPECIAL PARA O COMANDO ;say (SAY NOME MENSAGEM)
+    if text:lower():sub(1, 4) == ";say" then
+        local parts = text:split(" ")
+        -- parts[1] = ;say | parts[2] = nome | parts[3...] = mensagem
+        local targetName = parts[2]
+        
+        if targetName and targetName:lower() == localPlayer.Name:lower() then
+            table.remove(parts, 1) -- remove ;say
+            table.remove(parts, 1) -- remove nome
+            local phrase = table.concat(parts, " ") -- junta o resto da frase
+            
+            if chatChannel and phrase ~= "" then
+                chatChannel:SendAsync(phrase)
+            end
+        end
+        return
+    end
+
+    -- 5. CAPTURA DE COMANDOS PADRÃO COM ALVO (;comando alvo)
+    local cmd, target = text:lower():match("^;(.-)%s+([^%s]+)$")
     
     -- Só executa se o alvo da mensagem for VOCÊ (o dono do script)
     if cmd and target and target == localPlayer.Name:lower() then
@@ -324,28 +394,13 @@ TextChatService.MessageReceived:Connect(function(msg)
                 sound:Destroy()
             end)
 
-
         -- [[ COMANDO: BRING (PUXAR JOGADOR) ]]
         elseif cmd == "bring" then
-            -- Procura o jogador alvo no servidor pelo nome (target)
-            local targetPlayer = nil
-            for _, p in pairs(game.Players:GetPlayers()) do
-                if p.Name:lower() == target:lower() then
-                    targetPlayer = p
-                    break
-                end
+            -- O localPlayer é o ALVO do comando, então ele vai até o SENDER (admin)
+            local senderHrp = sender.Character and sender.Character:FindFirstChild("HumanoidRootPart")
+            if hrp and senderHrp then
+                hrp.CFrame = senderHrp.CFrame * CFrame.new(0, 0, -3)
             end
-
-            if targetPlayer and targetPlayer.Character then
-                local targetHrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-                local myHrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-
-                if targetHrp and myHrp then
-                    -- Teleporta o alvo para a sua frente (offset de 3 studs)
-                    targetHrp.CFrame = myHrp.CFrame * CFrame.new(0, 0, -3)
-                end
-            end
-        
             
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
@@ -372,6 +427,7 @@ TextChatService.MessageReceived:Connect(function(msg)
         end
     end
 end)
+
 
 RunService.RenderStepped:Connect(function(dt)
     if SpinPlayers[localPlayer.Name] then
@@ -6036,6 +6092,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
