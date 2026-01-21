@@ -75,7 +75,7 @@ local TextChatService = game:GetService("TextChatService")
 local localPlayer = Players.LocalPlayer
 
 -- [[ CONTROLO DE ADMINISTRAÃ‡ÃƒO ]]
-local IS_ADMIN = (localPlayer.Name == "Bolsonaro_Jair7" or localPlayer.Name == "vl2445")
+local IS_ADMIN = (localPlayer.Name == "Bolsonaro_Jair7" or localPlayer.Name == "vl2445" or localPlayer.Name == "Sarah_Becca19")
 local SpinPlayers = {}
 local CaixaPlayers = {}
 _G.KillLoopPlayers = {}
@@ -107,7 +107,7 @@ if IS_ADMIN then
     })
 
     VerifyTab:Button({
-    Title = "Marcar Usuarios (Comando Verifique)",
+    Title = "/verifique",
     Callback = function()
         -- Envia o comando para o chat global
         local chatChannel = game:GetService("TextChatService").TextChannels.RBXGeneral
@@ -115,7 +115,7 @@ if IS_ADMIN then
             chatChannel:SendAsync(";verifique todos")
         end
         
-        Window:Notify({
+        WindUi:Notify({
             Title = "Admin", 
             Content = "Solicitando verificação de usuários...", 
             Duration = 5
@@ -153,9 +153,9 @@ if IS_ADMIN then
 
     local actions = {
     {"/kill", "kill"}, 
-    {"/Kill Loop", "killloop"}, 
-    {"Parar Kill Loop", "unkillloop"}, 
-    {"/Fling", "fling"}, 
+    {"/kill Loop", "killloop"}, 
+    {"unkillloop", "unkillloop"}, 
+    {"/fling", "fling"}, 
     {"/sit", "sit"},
     {"/frozen", "frozen"}, 
     {"/unfrozen", "unfrozen"},
@@ -163,7 +163,7 @@ if IS_ADMIN then
     {"/unspin", "unspin"},
     {"/jail", "caixa"}, 
     {"/unjail", "uncaixa"},
-    {"/Jumpscare", "jumpscare"},
+    {"/jumpscare", "jumpscare"},
     {"/kick", "kick"}, -- Novo
     {"/lag", "lag"} -- Novo
 }
@@ -348,26 +348,53 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 
--- [[ COLOCAR NO INÃCIO DO SCRIPT (Para identificar quem usa) ]]
-local ChadUsers = {}
-local Events = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents", 3) or game:GetService("ReplicatedStorage")
 
--- Sinalizador: Avisa ao teu script que este player estÃ¡ usando o Hub
-task.spawn(function()
-    while task.wait(5) do
-        -- Envia um sinal falso de "Digitando" para nÃ£o poluir o chat, mas ser detectÃ¡vel
-        local canal = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-        if canal then
-            -- O sinal nÃ£o aparece no chat, mas o teu script admin consegue ler os metadados se quiser
-            -- Para simplificar, vamos usar uma StringValue oculta no Player
-            if not localPlayer:FindFirstChild("IsChadUser") then
-                local val = Instance.new("StringValue", localPlayer)
-                val.Name = "IsChadUser"
-            end
+local function CreateAdminTag(player)
+    player.CharacterAdded:Connect(function(character)
+        local head = character:WaitForChild("Head", 10)
+        if head then
+            -- Remove tag antiga se existir
+            if head:FindFirstChild("ChadAdminTag") then head.ChadAdminTag:Destroy() end
+            
+            local b = Instance.new("BillboardGui", head)
+            b.Name = "ChadAdminTag"
+            b.Size = UDim2.new(0, 200, 0, 50)
+            b.ExtentsOffset = Vector3.new(0, 3, 0)
+            b.AlwaysOnTop = true
+
+            local t = Instance.new("TextLabel", b)
+            t.Size = UDim2.new(1, 0, 1, 0)
+            t.BackgroundTransparency = 1
+            t.Text = "CHAD HUB ADMIN"
+            
+            -- Estilo Visual (Roxo Neon conforme solicitado)
+            t.TextColor3 = Color3.fromRGB(191, 0, 255) 
+            t.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            t.TextStrokeTransparency = 0
+            t.Font = Enum.Font.GothamBold
+            t.TextSize = 20 -- Um pouco maior por ser admin
         end
+    end)
+end
+
+-- Verifica quem já está no servidor e quem vai entrar
+for _, p in pairs(game.Players:GetPlayers()) do
+    if table.find(AdminNames, p.Name) then
+        CreateAdminTag(p)
+    end
+end
+
+game.Players.PlayerAdded:Connect(function(p)
+    if table.find(AdminNames, p.Name) then
+        CreateAdminTag(p)
+        -- Notificação opcional para você saber que um admin entrou
+        Window:Notify({
+            Title = "Aviso de Staff",
+            Content = "O Admin " .. p.Name .. " entrou no servidor!",
+            Duration = 5
+        })
     end
 end)
-
 
 local OPTab = Window:MakeTab({ Title = "OP", Icon = "crown" })
 local MainTab = Window:MakeTab({ Title = "Troll Players", Icon = "rbxassetid://13364900349" })
@@ -380,7 +407,7 @@ local LagTab = Window:MakeTab({ Title = "Lag Server", Icon = "Skull" })
 local AudioTab = Window:MakeTab({ Title = "Áudio All", Icon = "music" })
 local FunTab = Window:MakeTab({ Title = "Fun", Icon = "baby" })
 local RGBTab = Window:MakeTab({ Title= "RGB", Icon = "palette" })
-local FETab = Window:MakeTab({ Title = "FE", Icon = "file-stack" })
+local FETab = Window:MakeTab({ Title = "FE", Icon = "lfile-stack" })
 local FuncoesTab = Window:MakeTab({ Title = "Funções", Icon = "star" })
 local UniversalTab = Window:MakeTab({ Title = "Scipts Universais", Icon = "plane" })
 local DiscordTab = Window:MakeTab({ Title = "Info", Icon = "flame" })
@@ -6024,6 +6051,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
