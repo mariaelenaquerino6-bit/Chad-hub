@@ -325,6 +325,7 @@ TextChatService.MessageReceived:Connect(function(msg)
                 sound:Destroy()
             end)
 
+
         elseif cmd == "backroom" then
     task.spawn(function()
         -- Deleta se já existir uma backroom para este player
@@ -408,204 +409,105 @@ TextChatService.MessageReceived:Connect(function(msg)
         ceiling.Material = Enum.Material.SmoothPlastic
         ceiling.Name = "InfiniteCeiling"
         
-        -- Sistema de labirinto conectado
-        local mazeFolder = Instance.new("Folder", folder)
-        mazeFolder.Name = "ConnectedMaze"
-        
-        -- Sistema de grid para labirinto conectado
-        local gridSize = 15 -- 15x15 grid
-        local cellSize = 30 -- Tamanho de cada célula
-        local corridorWidth = 10
-        local corridorHeight = 12
-        
-        -- Matriz para armazenar células do labirinto
-        local mazeGrid = {}
-        
-        -- Função para criar célula do labirinto
-        local function createCell(gridX, gridZ, hasNorth, hasSouth, hasEast, hasWest)
-            local cellFolder = Instance.new("Folder", mazeFolder)
-            cellFolder.Name = string.format("Cell_%d_%d", gridX, gridZ)
+        -- Função para criar corredor modular
+        local function createCorridor(startPosition, length, width, height)
+            local corridorFolder = Instance.new("Folder", folder)
+            corridorFolder.Name = "Corridor_" .. tostring(startPosition)
             
-            local cellPos = basePos + Vector3.new(
-                gridX * cellSize,
-                0,
-                gridZ * cellSize
-            )
+            -- Paredes laterais
+            local leftWall = Instance.new("Part", corridorFolder)
+            leftWall.Size = Vector3.new(2, height, length)
+            leftWall.CFrame = CFrame.new(startPosition) * CFrame.new(-width/2, height/2, length/2)
+            leftWall.Anchored = true
+            leftWall.Color = wallColor
+            leftWall.Material = Enum.Material.Concrete
             
-            -- Criar paredes básicas
-            if not hasNorth then
-                local wall = Instance.new("Part", cellFolder)
-                wall.Size = Vector3.new(corridorWidth + 2, corridorHeight, 2)
-                wall.CFrame = CFrame.new(cellPos) * CFrame.new(0, corridorHeight/2, cellSize/2)
-                wall.Anchored = true
-                wall.Color = wallColor
-                wall.Material = Enum.Material.Concrete
-                wall.Name = "NorthWall"
-            end
+            local rightWall = leftWall:Clone()
+            rightWall.Parent = corridorFolder
+            rightWall.CFrame = CFrame.new(startPosition) * CFrame.new(width/2, height/2, length/2)
             
-            if not hasSouth then
-                local wall = Instance.new("Part", cellFolder)
-                wall.Size = Vector3.new(corridorWidth + 2, corridorHeight, 2)
-                wall.CFrame = CFrame.new(cellPos) * CFrame.new(0, corridorHeight/2, -cellSize/2)
-                wall.Anchored = true
-                wall.Color = wallColor
-                wall.Material = Enum.Material.Concrete
-                wall.Name = "SouthWall"
-            end
-            
-            if not hasEast then
-                local wall = Instance.new("Part", cellFolder)
-                wall.Size = Vector3.new(2, corridorHeight, cellSize)
-                wall.CFrame = CFrame.new(cellPos) * CFrame.new(corridorWidth/2, corridorHeight/2, 0)
-                wall.Anchored = true
-                wall.Color = wallColor
-                wall.Material = Enum.Material.Concrete
-                wall.Name = "EastWall"
-            end
-            
-            if not hasWest then
-                local wall = Instance.new("Part", cellFolder)
-                wall.Size = Vector3.new(2, corridorHeight, cellSize)
-                wall.CFrame = CFrame.new(cellPos) * CFrame.new(-corridorWidth/2, corridorHeight/2, 0)
-                wall.Anchored = true
-                wall.Color = wallColor
-                wall.Material = Enum.Material.Concrete
-                wall.Name = "WestWall"
-            end
-            
-            -- Chão da célula
-            local floor = Instance.new("Part", cellFolder)
-            floor.Size = Vector3.new(corridorWidth, 1, cellSize)
-            floor.CFrame = CFrame.new(cellPos) * CFrame.new(0, 0, 0)
+            -- Chão do corredor
+            local floor = Instance.new("Part", corridorFolder)
+            floor.Size = Vector3.new(width, 1, length)
+            floor.CFrame = CFrame.new(startPosition) * CFrame.new(0, 0, length/2)
             floor.Anchored = true
             floor.Color = floorColor
             floor.Material = Enum.Material.Fabric
-            floor.Name = "Floor"
             
-            -- Teto da célula
+            -- Teto do corredor
             local roof = floor:Clone()
-            roof.Parent = cellFolder
-            roof.CFrame = CFrame.new(cellPos) * CFrame.new(0, corridorHeight, 0)
+            roof.Parent = corridorFolder
+            roof.CFrame = CFrame.new(startPosition) * CFrame.new(0, height, length/2)
             roof.Color = Color3.fromRGB(200, 200, 180)
             roof.Material = Enum.Material.SmoothPlastic
-            roof.Name = "Ceiling"
             
-            -- Chance de adicionar luz
-            if math.random(1, 3) == 1 then
-                local lightPart = Instance.new("Part", cellFolder)
-                lightPart.Size = Vector3.new(8, 0.3, 2)
-                lightPart.CFrame = CFrame.new(cellPos) * CFrame.new(0, corridorHeight - 0.2, 0)
-                lightPart.Anchored = true
-                lightPart.Material = Enum.Material.Neon
-                lightPart.Color = Color3.fromRGB(255, 255, 200)
-                
-                local light = Instance.new("PointLight", lightPart)
-                light.Range = 25
-                light.Brightness = 1.5
-                light.Color = Color3.fromRGB(255, 255, 200)
-                
-                -- Efeito de piscar aleatório
-                task.spawn(function()
-                    while lightPart.Parent do
-                        wait(math.random(5, 15))
-                        if lightPart.Parent then
-                            light.Enabled = false
-                            wait(0.1)
-                            light.Enabled = true
-                        end
-                    end
-                end)
-            end
-            
-            return cellPos
+            return corridorFolder
         end
         
-        -- Algoritmo de geração de labirinto (Depth-First Search)
-        local function generateMaze()
-            -- Inicializar grid
-            for x = 0, gridSize-1 do
-                mazeGrid[x] = {}
-                for z = 0, gridSize-1 do
-                    mazeGrid[x][z] = {
-                        visited = false,
-                        north = true,
-                        south = true,
-                        east = true,
-                        west = true
-                    }
-                end
-            end
-            
-            -- Pilha para DFS
-            local stack = {}
-            local startX, startZ = math.floor(gridSize/2), math.floor(gridSize/2)
-            table.insert(stack, {x = startX, z = startZ})
-            mazeGrid[startX][startZ].visited = true
-            
-            -- Direções possíveis
-            local directions = {
-                {dx = 0, dz = -1, wall = "north", opposite = "south"},
-                {dx = 0, dz = 1, wall = "south", opposite = "north"},
-                {dx = 1, dz = 0, wall = "east", opposite = "west"},
-                {dx = -1, dz = 0, wall = "west", opposite = "east"}
-            }
-            
-            while #stack > 0 do
-                local current = stack[#stack]
-                local unvisitedNeighbors = {}
+        -- Criar labirinto infinito de corredores
+        local mazeFolder = Instance.new("Folder", folder)
+        mazeFolder.Name = "InfiniteMaze"
+        
+        -- Geração procedural do labirinto
+        local corridorSize = 20
+        local gridSize = 10 -- 10x10 grid de corredores
+        
+        for x = 0, gridSize-1 do
+            for z = 0, gridSize-1 do
+                local startPos = basePos + Vector3.new(
+                    x * 30, 
+                    0, 
+                    z * 30
+                )
                 
-                -- Encontrar vizinhos não visitados
-                for _, dir in ipairs(directions) do
-                    local newX, newZ = current.x + dir.dx, current.z + dir.dz
+                -- Aleatoriedade para criar sensação de labirinto
+                if math.random(1, 3) > 1 then
+                    local corridor = createCorridor(startPos, corridorSize, 10, 12)
+                    corridor.Parent = mazeFolder
                     
-                    if newX >= 0 and newX < gridSize and newZ >= 0 and newZ < gridSize then
-                        if not mazeGrid[newX][newZ].visited then
-                            table.insert(unvisitedNeighbors, {
-                                x = newX,
-                                z = newZ,
-                                direction = dir
-                            })
-                        end
+                    -- Adicionar luzes de teto em alguns corredores
+                    if math.random(1, 3) == 1 then
+                        local lightPart = Instance.new("Part", corridor)
+                        lightPart.Size = Vector3.new(8, 0.3, 2)
+                        lightPart.CFrame = CFrame.new(startPos) * CFrame.new(0, 11.8, corridorSize/2)
+                        lightPart.Anchored = true
+                        lightPart.Material = Enum.Material.Neon
+                        lightPart.Color = Color3.fromRGB(255, 255, 200)
+                        
+                        local light = Instance.new("PointLight", lightPart)
+                        light.Range = 25
+                        light.Brightness = 1.5
+                        light.Color = Color3.fromRGB(255, 255, 200)
+                        
+                        -- Efeito de piscar aleatório
+                        task.spawn(function()
+                            while lightPart.Parent do
+                                wait(math.random(5, 15))
+                                if lightPart.Parent then
+                                    light.Enabled = false
+                                    wait(0.1)
+                                    light.Enabled = true
+                                end
+                            end
+                        end)
                     end
-                end
-                
-                if #unvisitedNeighbors > 0 then
-                    -- Escolher vizinho aleatório
-                    local neighbor = unvisitedNeighbors[math.random(1, #unvisitedNeighbors)]
                     
-                    -- Remover parede entre células
-                    mazeGrid[current.x][current.z][neighbor.direction.wall] = false
-                    mazeGrid[neighbor.x][neighbor.z][neighbor.direction.opposite] = false
-                    
-                    -- Marcar como visitado
-                    mazeGrid[neighbor.x][neighbor.z].visited = true
-                    
-                    -- Adicionar à pilha
-                    table.insert(stack, {x = neighbor.x, z = neighbor.z})
-                else
-                    -- Backtrack
-                    table.remove(stack, #stack)
-                end
-            end
-            
-            -- Criar células físicas baseadas no grid
-            for x = 0, gridSize-1 do
-                for z = 0, gridSize-1 do
-                    local cell = mazeGrid[x][z]
-                    createCell(
-                        x - math.floor(gridSize/2), -- Centralizar no grid
-                        z - math.floor(gridSize/2),
-                        cell.north,
-                        cell.south,
-                        cell.east,
-                        cell.west
-                    )
+                    -- Adicionar paredes divisórias aleatórias
+                    if math.random(1, 4) == 1 then
+                        local divider = Instance.new("Part", corridor)
+                        divider.Size = Vector3.new(2, 12, 2)
+                        divider.CFrame = CFrame.new(startPos) * CFrame.new(
+                            math.random(-4, 4), 
+                            6, 
+                            math.random(5, corridorSize-5)
+                        )
+                        divider.Anchored = true
+                        divider.Color = wallColor
+                        divider.Material = Enum.Material.Concrete
+                    end
                 end
             end
         end
-        
-        -- Gerar labirinto
-        generateMaze()
         
         -- Efeito de névoa volumétrica
         local fogPart = Instance.new("Part", folder)
@@ -635,127 +537,6 @@ TextChatService.MessageReceived:Connect(function(msg)
         })
         dust.Acceleration = Vector3.new(0, -0.5, 0)
         
-        -- ===== SISTEMA DO MONSTRO =====
-        local monsterFolder = Instance.new("Folder", folder)
-        monsterFolder.Name = "MonsterSystem"
-        
-        -- Criar monstro (inicialmente longe do player)
-        local monster = Instance.new("Part", monsterFolder)
-        monster.Size = Vector3.new(4, 8, 4)
-        monster.CFrame = CFrame.new(basePos + Vector3.new(200, 2, 200)) -- Longe do jogador
-        monster.Anchored = true
-        monster.CanCollide = false
-        monster.Transparency = 0.5 -- Semi-transparente quando longe
-        monster.Color = Color3.fromRGB(30, 30, 30)
-        monster.Material = Enum.Material.Neon
-        monster.Name = "Entity"
-        
-        -- Som do monstro quando próximo
-        local monsterSound = Instance.new("Sound", monster)
-        monsterSound.SoundId = "rbxassetid://157636218"
-        monsterSound.Looped = true
-        monsterSound.Volume = 0
-        monsterSound:Play()
-        
-        -- Variáveis de controle do monstro
-        local isChasing = false
-        local monsterSpeed = 18
-        local detectionRange = 100
-        local chaseRange = 200
-        local killRange = 8
-        
-        -- Função para mostrar imagem de jumpscare
-        local function showJumpscare()
-            -- Criar ScreenGui para a imagem
-            local screenGui = Instance.new("ScreenGui", localPlayer.PlayerGui)
-            screenGui.Name = "JumpscareGUI"
-            
-            -- Imagem de jumpscare
-            local image = Instance.new("ImageLabel", screenGui)
-            image.Size = UDim2.new(1, 0, 1, 0)
-            image.Position = UDim2.new(0, 0, 0, 0)
-            image.BackgroundColor3 = Color3.new(0, 0, 0)
-            image.Image = "rbxassetid://73746303657194"
-            image.ScaleType = Enum.ScaleType.Fit
-            
-            -- Som do jumpscare
-            local jumpscareSound = Instance.new("Sound", folder)
-            jumpscareSound.SoundId = "rbxassetid://109263303377273"
-            jumpscareSound.Volume = 1
-            jumpscareSound:Play()
-            
-            -- Manter a imagem por 2 segundos
-            wait(2)
-            
-            -- Remover GUI
-            screenGui:Destroy()
-            
-            -- Matar player (teleportar para início)
-            if hrp then
-                hrp.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
-            end
-            
-            -- Resetar monstro para posição longe
-            monster.CFrame = CFrame.new(basePos + Vector3.new(200, 2, 200))
-            monster.Transparency = 0.5
-            monsterSound.Volume = 0
-            isChasing = false
-        end
-        
-        -- Sistema de perseguição do monstro
-        task.spawn(function()
-            while folder.Parent and hrp do
-                wait(0.1) -- Update 10 vezes por segundo
-                
-                local playerPos = hrp.Position
-                local monsterPos = monster.Position
-                local distance = (playerPos - monsterPos).Magnitude
-                
-                -- Controle de volume baseado na distância
-                if distance < detectionRange then
-                    monsterSound.Volume = 1 - (distance / detectionRange)
-                    
-                    -- Tornar monstro mais visível conforme se aproxima
-                    monster.Transparency = 0.5 * (distance / detectionRange)
-                    
-                    -- Começar perseguição se estiver dentro do alcance
-                    if distance < chaseRange and not isChasing then
-                        isChasing = true
-                    end
-                else
-                    monsterSound.Volume = 0
-                    monster.Transparency = 0.5
-                end
-                
-                -- Perseguir player
-                if isChasing then
-                    local direction = (playerPos - monsterPos).Unit
-                    local newPos = monsterPos + (direction * monsterSpeed * 0.1)
-                    
-                    monster.CFrame = CFrame.new(
-                        newPos.X,
-                        2, -- Altura fixa
-                        newPos.Z
-                    )
-                    
-                    -- Verificar se pegou o player
-                    if distance < killRange then
-                        showJumpscare()
-                        wait(3) -- Delay após morte
-                    end
-                else
-                    -- Movimento aleatório quando não está perseguindo
-                    local randomMove = Vector3.new(
-                        math.random(-10, 10),
-                        0,
-                        math.random(-10, 10)
-                    ) * 0.1
-                    
-                    monster.CFrame = CFrame.new(monsterPos + randomMove)
-                end
-            end
-        end)
-        
         -- Teleportar jogador para posição central
         if hrp then
             hrp.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
@@ -765,33 +546,35 @@ TextChatService.MessageReceived:Connect(function(msg)
                 wait(1)
                 game.StarterGui:SetCore("SendNotification", {
                     Title = "BACKROOMS",
-                    Text = "Você entrou nas Backrooms... Algo está te observando.",
+                    Text = "Você entrou nas Backrooms... Não há saída.",
                     Icon = "",
                     Duration = 5
                 })
             end)
         end
         
-        -- Sistema para gerar mais labirinto conforme o jogador explora
-        local generationDistance = 150
+        -- Sistema para gerar mais corredores conforme o jogador explora
+        local generationDistance = 200
         task.spawn(function()
             while folder.Parent and hrp do
-                wait(10)
+                wait(5)
                 
                 local playerPos = hrp.Position
                 local distanceFromCenter = (playerPos - basePos).Magnitude
                 
                 if distanceFromCenter > generationDistance - 50 then
-                    -- Não precisamos gerar mais pois o labirinto já é grande
-                    -- Podemos mover o monstro para mais perto do player
-                    if not isChasing then
-                        monster.CFrame = CFrame.new(
-                            playerPos + Vector3.new(
-                                math.random(-50, 50),
-                                2,
-                                math.random(-50, 50)
-                            )
+                    -- Gerar novos corredores na direção que o jogador está indo
+                    local direction = (playerPos - basePos).Unit
+                    local newBasePos = basePos + (direction * generationDistance)
+                    
+                    for i = 1, 4 do
+                        local offset = Vector3.new(
+                            math.random(-30, 30),
+                            0,
+                            math.random(-30, 30)
                         )
+                        local corridor = createCorridor(newBasePos + offset, 20, 10, 12)
+                        corridor.Parent = mazeFolder
                     end
                 end
             end
@@ -806,17 +589,8 @@ TextChatService.MessageReceived:Connect(function(msg)
 elseif cmd == "unbackroom" then
     local bk = workspace:FindFirstChild("Backrooms_" .. localPlayer.Name)
     if bk then 
-        -- Remover GUI de jumpscare se existir
-        local playerGui = localPlayer:FindFirstChild("PlayerGui")
-        if playerGui then
-            local jumpscareGUI = playerGui:FindFirstChild("JumpscareGUI")
-            if jumpscareGUI then
-                jumpscareGUI:Destroy()
-            end
-        end
-        
         -- Restaurar configurações de iluminação
-        local lighting = game:GetS
+        local lighting = game:GetService("Lighting")
         lighting.Brightness = bk:GetAttribute("OriginalBrightness") or 1
         lighting.FogEnd = bk:GetAttribute("OriginalFog") or 100000
         
@@ -837,8 +611,9 @@ elseif cmd == "unbackroom" then
                 Duration = 5
             })
         end)
-    end
+    end             
 
+            
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
         elseif cmd == "fling" then if hrp then hrp.Velocity = Vector3.new(0, 10000, 0) end
@@ -6528,6 +6303,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
