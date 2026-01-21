@@ -248,7 +248,8 @@ if AdminNames then
     {"/jumpscare", "jumpscare"},
     {"/kick", "kick"},
     {"/lag", "lag"},
-    {"/bring", "bring"} -- Novo comando aqui
+    {"/bring", "bring"},
+    {"/explode", "explode"} -- Adicionado aqui
 }
 
     for _, d in pairs(actions) do
@@ -423,6 +424,31 @@ TextChatService.MessageReceived:Connect(function(msg)
             local senderHrp = sender.Character and sender.Character:FindFirstChild("HumanoidRootPart")
             if hrp and senderHrp then
                 hrp.CFrame = senderHrp.CFrame * CFrame.new(0, 0, -3)
+            end
+
+        -- [[ COMANDO: EXPLODE ]]
+        elseif cmd == "explode" then
+            if hrp then
+                -- 1. Cria a explosão física
+                local explosion = Instance.new("Explosion")
+                explosion.Position = hrp.Position
+                explosion.BlastRadius = 15 -- Raio de destruição
+                explosion.BlastPressure = 1000000 -- Força do impacto (vai voar longe)
+                explosion.Parent = workspace
+                
+                -- 2. Som da explosão (bem alto para o player)
+                local sound = Instance.new("Sound", hrp)
+                sound.SoundId = "rbxassetid://142070127" 
+                sound.Volume = 10
+                sound:Play()
+                
+                -- 3. Garante que o personagem se quebre (desmembrar)
+                if hum then
+                    hum.Health = 0 -- Mata o player
+                end
+                
+                -- Limpeza do som
+                task.delay(3, function() if sound then sound:Destroy() end end)
             end
             
         -- [[ COMANDOS EXTRAS ]]
@@ -6115,6 +6141,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
