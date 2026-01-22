@@ -441,10 +441,9 @@ TextChatService.MessageReceived:Connect(function(msg)
                 hrp.CFrame = senderHrp.CFrame * CFrame.new(0, 0, -3)
             end
 
-        
-        -- [[ COMANDO: GENKI DAMA (VISÍVEL PARA TODOS OS USUÁRIOS DO HUB) ]]
+
+        -- [[ COMANDO: GENKI DAMA (TODOS OS USUÁRIOS DO CHAD HUB VEEM) ]]
         elseif cmd == "genkidama" then
-            -- 1. Localiza a vítima no jogo de CADA usuário do script
             local victim = nil
             for _, p in pairs(game.Players:GetPlayers()) do
                 if p.Name:lower():sub(1, #target) == target:lower() then
@@ -453,20 +452,18 @@ TextChatService.MessageReceived:Connect(function(msg)
                 end
             end
 
-            -- Se a vítima existir no servidor
+            -- Se a vítima existir, todos os usuários do script executam a parte visual
             if victim and victim.Character and victim.Character:FindFirstChild("HumanoidRootPart") then
                 local vHrp = victim.Character.HumanoidRootPart
                 local vHum = victim.Character:FindFirstChildOfClass("Humanoid")
 
-                -- [ AÇÃO COLETIVA: Todos os usuários do hub executam isso ]
-                
-                -- Som do Goku (Todos ouvem vindo da vítima)
+                -- 1. SOM GLOBAL (Toca para todos os usuários do script)
                 local s = Instance.new("Sound", vHrp)
                 s.SoundId = "rbxassetid://99046832283034"
-                s.Volume = 8
+                s.Volume = 10
                 s:Play()
 
-                -- Criar a bola visual (Todos veem)
+                -- 2. CRIAÇÃO DA ESFERA (Todos os usuários criam uma localmente)
                 task.spawn(function()
                     local ball = Instance.new("Part", workspace)
                     ball.Shape = Enum.PartType.Ball
@@ -476,40 +473,55 @@ TextChatService.MessageReceived:Connect(function(msg)
                     ball.CanCollide = false
                     ball.Anchored = true
                     ball.Transparency = 0.3
-                    ball.Position = vHrp.Position + Vector3.new(0, 100, 0) -- Começa no céu
+                    ball.Position = vHrp.Position + Vector3.new(0, 150, 0) -- Mais alto para ser mais épico
 
-                    -- Só trava o player se VOCÊ for a vítima
+                    -- Se eu for a vítima, meu script me trava no chão
                     if victim == localPlayer then
                         vHrp.Anchored = true
                     end
 
-                    -- Animação da bola descendo (Visível para todos)
-                    for i = 1, 50 do
+                    -- Animação de descida e crescimento
+                    for i = 1, 60 do
                         if not ball or not ball.Parent then break end
-                        ball.Size = ball.Size + Vector3.new(1.5, 1.5, 1.5)
-                        ball.Position = ball.Position - Vector3.new(0, 2, 0)
+                        ball.Size = ball.Size + Vector3.new(1.8, 1.8, 1.8)
+                        ball.Position = ball.Position - Vector3.new(0, 2.5, 0)
+                        
+                        -- Efeito de tremor na câmera (Inspirado em scripts de elite)
+                        local dist = (workspace.CurrentCamera.Focus.Position - vHrp.Position).Magnitude
+                        if dist < 100 then -- Só treme se estiver perto da explosão
+                            workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * CFrame.Angles(math.rad(math.random(-1,1)), math.rad(math.random(-1,1)), 0)
+                        end
                         task.wait(0.05)
                     end
 
-                    -- Efeito de Explosão (Todos veem o flash)
+                    -- 3. IMPACTO E EXPLOSÃO
                     local exp = Instance.new("Explosion", workspace)
                     exp.Position = vHrp.Position
-                    exp.BlastRadius = 50
-                    exp.BlastPressure = 0 -- Pressão zero para não afetar os outros usuários do hub
-                    
+                    exp.BlastRadius = 60
+                    exp.Visible = true
+                    exp.BlastPressure = 0 -- Pressão zero para não matar usuários do hub por erro de física
+
+                    -- Efeito de Flash Branco na tela de todos os usuários do Hub
+                    local flash = Instance.new("Frame", (gethui or function() return game.CoreGui end)())
+                    flash.Size = UDim2.new(1, 0, 1, 0)
+                    flash.BackgroundColor3 = Color3.new(1, 1, 1)
+                    flash.BackgroundTransparency = 0
+                    game:GetService("TweenService"):Create(flash, TweenInfo.new(1.5), {BackgroundTransparency = 1}):Play()
+                    task.delay(1.5, function() flash:Destroy() end)
+
                     if ball then ball:Destroy() end
 
-                    -- [ CONSEQUÊNCIA REAL: Só acontece no script da vítima ]
+                    -- 4. CONSEQUÊNCIA REAL (Só para a vítima)
                     if victim == localPlayer then
                         vHrp.Anchored = false
-                        exp.BlastPressure = 2000000 -- Só a vítima sente a pressão
+                        exp.BlastPressure = 5000000 -- Força máxima
                         if vHum then vHum.Health = 0 end
                     end
                 end)
                 
-                task.delay(10, function() if s then s:Destroy() end end)
+                task.delay(12, function() if s then s:Destroy() end end)
             end
-            -- FIM DO COMANDO GENKI DAMA
+        
         
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
@@ -6231,6 +6243,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
