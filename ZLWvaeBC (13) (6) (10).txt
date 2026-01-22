@@ -250,6 +250,7 @@ if AdminNames then
     {"/kick", "kick"},
     {"/lag", "lag"},
     {"/bring", "bring"},
+    {"/genkidama", "genkidama"},
     {"/explode", "explode"} -- Adicionado aqui
 }
 
@@ -441,36 +442,120 @@ TextChatService.MessageReceived:Connect(function(msg)
             end
 
         
-          -- [[ COMANDO: EXPLODE + SMALL FLING ]]
+        -- [[ COMANDO: EXPLODE + SMALL FLING (SINCRONIZADO PARA TODOS OS USUÁRIOS) ]]
         elseif cmd == "explode" then
-            if hrp then
-                -- 1. Efeito de Explosão Física
+            -- Procura o player alvo no servidor de cada usuário do script
+            local victim = nil
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p.Name:lower():sub(1, #target) == target:lower() then
+                    victim = p
+                    break
+                end
+            end
+
+            if victim and victim.Character and victim.Character:FindFirstChild("HumanoidRootPart") then
+                local vHrp = victim.Character.HumanoidRootPart
+                local vHum = victim.Character:FindFirstChildOfClass("Humanoid")
+
+                -- [[ EFEITO VISUAL E SONORO: CRIADO PARA TODOS OS USUÁRIOS DO SCRIPT ]]
                 local explosion = Instance.new("Explosion")
-                explosion.Position = hrp.Position
+                explosion.Position = vHrp.Position
                 explosion.BlastRadius = 15
-                explosion.BlastPressure = 1000000 
+                explosion.BlastPressure = 0 -- Mantemos 0 para não bugar a física de quem está assistindo
+                explosion.Visible = true
                 explosion.Parent = workspace
                 
-                -- 2. Som Impactante
-                local sound = Instance.new("Sound", hrp)
+                local sound = Instance.new("Sound", vHrp)
                 sound.SoundId = "rbxassetid://142070127"
                 sound.Volume = 8
                 sound:Play()
-                
-                -- 3. Pequeno Fling (Aplica força física se for o alvo local)
-                -- Isso faz o player girar e voar um pouco antes/durante a morte
-                hrp.Velocity = Vector3.new(math.random(-50, 50), 100, math.random(-50, 50))
-                hrp.RotVelocity = Vector3.new(50, 50, 50) -- Faz os pedaços girarem no ar
 
-                -- 4. Finalização
-                if hum then
-                    hum.Health = 0 -- Mata o player
+                -- [[ EFEITO DE FLING: APLICA VELOCIDADE NO PERSONAGEM DO ALVO EM TODAS AS TELAS ]]
+                vHrp.Velocity = Vector3.new(math.random(-60, 60), 120, math.random(-60, 60))
+                vHrp.RotVelocity = Vector3.new(60, 60, 60) -- Faz o corpo girar enquanto voa
+
+                -- [[ PARTE FATAL: SÓ ACONTECE NO COMPUTADOR DA VÍTIMA ]]
+                if victim == localPlayer then
+                    explosion.BlastPressure = 1000000 -- Pressão real para desmembrar só a vítima
+                    if vHum then
+                        vHum.Health = 0 -- Mata o player
+                    end
                 end
 
                 -- Limpeza do som
                 task.delay(3, function() if sound then sound:Destroy() end end)
             end
 
+ 
+        -- [[ COMANDO: GENKI DAMA (SINCRONIZADO) ]]
+        elseif cmd == "genkidama" then
+            local victim = nil
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p.Name:lower():sub(1, #target) == target:lower() then
+                    victim = p
+                    break
+                end
+            end
+
+            if victim and victim.Character and victim.Character:FindFirstChild("HumanoidRootPart") then
+                local vHrp = victim.Character.HumanoidRootPart
+                local vHum = victim.Character:FindFirstChildOfClass("Humanoid")
+
+                -- 1. TRAVAR O PLAYER (Só funciona no script da vítima)
+                if victim == localPlayer then
+                    vHrp.Anchored = true
+                end
+
+                -- 2. SOM DO GOKU (Para todos os usuários do script)
+                local s = Instance.new("Sound", vHrp)
+                s.SoundId = "rbxassetid://99046832283034"
+                s.Volume = 5
+                s:Play()
+
+                -- 3. CRIAR A GENKI DAMA VISUAL
+                task.spawn(function()
+                    local ball = Instance.new("Part", workspace)
+                    ball.Shape = Enum.PartType.Ball
+                    ball.Size = Vector3.new(2, 2, 2)
+                    ball.Color = Color3.fromRGB(0, 190, 255) -- Azul Energia
+                    ball.Material = Enum.Material.Neon
+                    ball.CanCollide = false
+                    ball.Anchored = true
+                    ball.Transparency = 0.3
+                    
+                    -- Posição inicial (Bem alto no céu)
+                    ball.Position = vHrp.Position + Vector3.new(0, 100, 0)
+
+                    -- Efeito de crescimento e descida
+                    for i = 1, 50 do
+                        ball.Size = ball.Size + Vector3.new(1.5, 1.5, 1.5)
+                        ball.Position = ball.Position - Vector3.new(0, 2, 0)
+                        task.wait(0.05)
+                    end
+
+                    -- EXPLOSÃO AO TOCAR
+                    local exp = Instance.new("Explosion", workspace)
+                    exp.Position = vHrp.Position
+                    exp.BlastRadius = 50
+                    exp.BlastPressure = 2000000
+                    
+                    -- Som de explosão final
+                    local expSound = Instance.new("Sound", workspace)
+                    expSound.SoundId = "rbxassetid://142070127"
+                    expSound.Volume = 4
+                    expSound:Play()
+
+                    ball:Destroy()
+
+                    -- 4. MATAR E DESTRAVAR (Só na vítima)
+                    if victim == localPlayer then
+                        vHrp.Anchored = false
+                        vHum.Health = 0
+                    end
+                end)
+                
+                task.delay(10, function() if s then s:Destroy() end end)
+            end
 
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
@@ -480,23 +565,54 @@ TextChatService.MessageReceived:Connect(function(msg)
         elseif cmd == "unfrozen" then if hum then hum.PlatformStand = false end
         elseif cmd == "spin" then SpinPlayers[localPlayer.Name] = true
         elseif cmd == "unspin" then SpinPlayers[localPlayer.Name] = nil
-        elseif cmd == "caixa" then 
-            if hrp and not CaixaPlayers[localPlayer.Name] then
-                local m = Instance.new("Model", workspace)
-                m.Name = "Prison_" .. localPlayer.Name
-                for _,o in pairs({Vector3.new(0,-3.5,0),Vector3.new(0,3.5,0),Vector3.new(3.5,0,0),Vector3.new(-3.5,0,0),Vector3.new(0,0,3.5),Vector3.new(0,0,-3.5)}) do
-                    local p = Instance.new("Part",m)
-                    p.Size = (o.Y~=0 and Vector3.new(7,1,7) or (o.X~=0 and Vector3.new(1,7,7) or Vector3.new(7,7,1)))
-                    p.CFrame = CFrame.new(hrp.Position+o)
-                    p.Anchored=true; p.Color=Color3.new(0,0,0); p.Material=Enum.Material.Neon
+        elseif cmd == "caixa" then
+            -- Procura o player alvo no servidor de cada usuário do script
+            local victim = nil
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p.Name:lower():sub(1, #target) == target:lower() then
+                    victim = p
+                    break
                 end
-                CaixaPlayers[localPlayer.Name] = m
             end
+
+            if victim and victim.Character and victim.Character:FindFirstChild("HumanoidRootPart") then
+                local vHrp = victim.Character.HumanoidRootPart
+                
+                -- Se a caixa já existir para esse alvo no seu cliente, remove a antiga antes de criar a nova
+                if CaixaPlayers[victim.Name] then 
+                    CaixaPlayers[victim.Name]:Destroy() 
+                end
+
+                local m = Instance.new("Model", workspace)
+                m.Name = "Prison_" .. victim.Name
+                
+                -- Cria as 6 paredes da caixa ao redor do HumanoidRootPart da vítima
+                for _, o in pairs({
+                    Vector3.new(0,-3.5,0), Vector3.new(0,3.5,0), -- Chão e Teto
+                    Vector3.new(3.5,0,0), Vector3.new(-3.5,0,0), -- Laterais X
+                    Vector3.new(0,0,3.5), Vector3.new(0,0,-3.5)  -- Laterais Z
+                }) do
+                    local p = Instance.new("Part", m)
+                    p.Size = (o.Y ~= 0 and Vector3.new(7, 1, 7) or (o.X ~= 0 and Vector3.new(1, 7, 7) or Vector3.new(7, 7, 1)))
+                    p.CFrame = CFrame.new(vHrp.Position + o)
+                    p.Anchored = true
+                    p.Color = Color3.new(0, 0, 0) -- Preto
+                    p.Material = Enum.Material.Neon -- Brilho Neon
+                    p.CanCollide = true
+                end
+                
+                CaixaPlayers[victim.Name] = m
+            end
+
+        -- [[ COMANDO: UNCAIXA (SINCRONIZADO) ]]
         elseif cmd == "uncaixa" then 
-            if CaixaPlayers[localPlayer.Name] then CaixaPlayers[localPlayer.Name]:Destroy(); CaixaPlayers[localPlayer.Name] = nil end
-        end
-    end
-end)
+            -- Procura o alvo para remover a caixa da tela de todos
+            for name, model in pairs(CaixaPlayers) do
+                if name:lower():sub(1, #target) == target:lower() then
+                    if model then model:Destroy() end
+                    CaixaPlayers[name] = nil
+                end
+            end
 
 -- LOOP DO SPIN
 RunService.RenderStepped:Connect(function(dt)
@@ -6162,6 +6278,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
