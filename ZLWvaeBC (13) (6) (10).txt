@@ -173,6 +173,7 @@ local Window = WindUI:CreateWindow({
     Size = UDim2.fromOffset(580, 460),
     Transparent = true,
     Theme = "Dark",
+    Background = "rbxassetid://109807059315452",
     BackgroundImageTransparency = 0.42,
     HideSearchBar = false
 })
@@ -6161,6 +6162,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
