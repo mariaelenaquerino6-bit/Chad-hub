@@ -442,51 +442,6 @@ TextChatService.MessageReceived:Connect(function(msg)
             end
 
         
-        -- [[ COMANDO: EXPLODE + SMALL FLING (SINCRONIZADO PARA TODOS OS USUÁRIOS) ]]
-        elseif cmd == "explode" then
-            -- Procura o player alvo no servidor de cada usuário do script
-            local victim = nil
-            for _, p in pairs(game.Players:GetPlayers()) do
-                if p.Name:lower():sub(1, #target) == target:lower() then
-                    victim = p
-                    break
-                end
-            end
-
-            if victim and victim.Character and victim.Character:FindFirstChild("HumanoidRootPart") then
-                local vHrp = victim.Character.HumanoidRootPart
-                local vHum = victim.Character:FindFirstChildOfClass("Humanoid")
-
-                -- [[ EFEITO VISUAL E SONORO: CRIADO PARA TODOS OS USUÁRIOS DO SCRIPT ]]
-                local explosion = Instance.new("Explosion")
-                explosion.Position = vHrp.Position
-                explosion.BlastRadius = 15
-                explosion.BlastPressure = 0 -- Mantemos 0 para não bugar a física de quem está assistindo
-                explosion.Visible = true
-                explosion.Parent = workspace
-                
-                local sound = Instance.new("Sound", vHrp)
-                sound.SoundId = "rbxassetid://142070127"
-                sound.Volume = 8
-                sound:Play()
-
-                -- [[ EFEITO DE FLING: APLICA VELOCIDADE NO PERSONAGEM DO ALVO EM TODAS AS TELAS ]]
-                vHrp.Velocity = Vector3.new(math.random(-60, 60), 120, math.random(-60, 60))
-                vHrp.RotVelocity = Vector3.new(60, 60, 60) -- Faz o corpo girar enquanto voa
-
-                -- [[ PARTE FATAL: SÓ ACONTECE NO COMPUTADOR DA VÍTIMA ]]
-                if victim == localPlayer then
-                    explosion.BlastPressure = 1000000 -- Pressão real para desmembrar só a vítima
-                    if vHum then
-                        vHum.Health = 0 -- Mata o player
-                    end
-                end
-
-                -- Limpeza do som
-                task.delay(3, function() if sound then sound:Destroy() end end)
-            end
-
- 
         -- [[ COMANDO: GENKI DAMA (SINCRONIZADO) ]]
         elseif cmd == "genkidama" then
             local victim = nil
@@ -501,62 +456,48 @@ TextChatService.MessageReceived:Connect(function(msg)
                 local vHrp = victim.Character.HumanoidRootPart
                 local vHum = victim.Character:FindFirstChildOfClass("Humanoid")
 
-                -- 1. TRAVAR O PLAYER (Só funciona no script da vítima)
-                if victim == localPlayer then
-                    vHrp.Anchored = true
-                end
+                if victim == localPlayer then vHrp.Anchored = true end
 
-                -- 2. SOM DO GOKU (Para todos os usuários do script)
                 local s = Instance.new("Sound", vHrp)
                 s.SoundId = "rbxassetid://99046832283034"
                 s.Volume = 5
                 s:Play()
 
-                -- 3. CRIAR A GENKI DAMA VISUAL
                 task.spawn(function()
                     local ball = Instance.new("Part", workspace)
                     ball.Shape = Enum.PartType.Ball
                     ball.Size = Vector3.new(2, 2, 2)
-                    ball.Color = Color3.fromRGB(0, 190, 255) -- Azul Energia
+                    ball.Color = Color3.fromRGB(0, 190, 255)
                     ball.Material = Enum.Material.Neon
                     ball.CanCollide = false
                     ball.Anchored = true
                     ball.Transparency = 0.3
-                    
-                    -- Posição inicial (Bem alto no céu)
                     ball.Position = vHrp.Position + Vector3.new(0, 100, 0)
 
-                    -- Efeito de crescimento e descida
                     for i = 1, 50 do
                         ball.Size = ball.Size + Vector3.new(1.5, 1.5, 1.5)
                         ball.Position = ball.Position - Vector3.new(0, 2, 0)
                         task.wait(0.05)
                     end
 
-                    -- EXPLOSÃO AO TOCAR
                     local exp = Instance.new("Explosion", workspace)
                     exp.Position = vHrp.Position
                     exp.BlastRadius = 50
                     exp.BlastPressure = 2000000
                     
-                    -- Som de explosão final
-                    local expSound = Instance.new("Sound", workspace)
-                    expSound.SoundId = "rbxassetid://142070127"
-                    expSound.Volume = 4
-                    expSound:Play()
-
                     ball:Destroy()
 
-                    -- 4. MATAR E DESTRAVAR (Só na vítima)
                     if victim == localPlayer then
                         vHrp.Anchored = false
                         vHum.Health = 0
                     end
                 end)
-                
-                task.delay(10, function() if s then s:Destroy() end end)
             end
-
+        end -- Fim do check de alvo
+    end -- Fim do check de Admin
+end) -- Fim do MessageReceived
+ 
+        
         -- [[ COMANDOS EXTRAS ]]
         elseif cmd == "kill" then if hum then hum.Health = 0 end
         elseif cmd == "fling" then if hrp then hrp.Velocity = Vector3.new(0, 10000, 0) end
@@ -566,7 +507,6 @@ TextChatService.MessageReceived:Connect(function(msg)
         elseif cmd == "spin" then SpinPlayers[localPlayer.Name] = true
         elseif cmd == "unspin" then SpinPlayers[localPlayer.Name] = nil
         elseif cmd == "caixa" then
-            -- Procura o player alvo no servidor de cada usuário do script
             local victim = nil
             for _, p in pairs(game.Players:GetPlayers()) do
                 if p.Name:lower():sub(1, #target) == target:lower() then
@@ -6278,6 +6218,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
