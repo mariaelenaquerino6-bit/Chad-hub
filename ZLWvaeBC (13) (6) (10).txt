@@ -442,9 +442,10 @@ TextChatService.MessageReceived:Connect(function(msg)
             end
 
 
-        -- [[ COMANDO: GENKI DAMA (TODOS OS USUÁRIOS DO CHAD HUB VEEM) ]]
+        -- [[ COMANDO: GENKI DAMA (SINCRONIZADO PARA TODOS OS USUÁRIOS DO HUB) ]]
         elseif cmd == "genkidama" then
             local victim = nil
+            -- Procura o alvo no servidor de cada usuário
             for _, p in pairs(game.Players:GetPlayers()) do
                 if p.Name:lower():sub(1, #target) == target:lower() then
                     victim = p
@@ -452,18 +453,17 @@ TextChatService.MessageReceived:Connect(function(msg)
                 end
             end
 
-            -- Se a vítima existir, todos os usuários do script executam a parte visual
             if victim and victim.Character and victim.Character:FindFirstChild("HumanoidRootPart") then
                 local vHrp = victim.Character.HumanoidRootPart
                 local vHum = victim.Character:FindFirstChildOfClass("Humanoid")
 
-                -- 1. SOM GLOBAL (Toca para todos os usuários do script)
+                -- 1. SOM (Criado para todos os usuários do Hub)
                 local s = Instance.new("Sound", vHrp)
                 s.SoundId = "rbxassetid://99046832283034"
                 s.Volume = 10
                 s:Play()
 
-                -- 2. CRIAÇÃO DA ESFERA (Todos os usuários criam uma localmente)
+                -- 2. EFEITO VISUAL (Todos os usuários criam a bola)
                 task.spawn(function()
                     local ball = Instance.new("Part", workspace)
                     ball.Shape = Enum.PartType.Ball
@@ -473,52 +473,51 @@ TextChatService.MessageReceived:Connect(function(msg)
                     ball.CanCollide = false
                     ball.Anchored = true
                     ball.Transparency = 0.3
-                    ball.Position = vHrp.Position + Vector3.new(0, 150, 0) -- Mais alto para ser mais épico
+                    ball.Position = vHrp.Position + Vector3.new(0, 150, 0)
 
-                    -- Se eu for a vítima, meu script me trava no chão
+                    -- Se o usuário atual for a VÍTIMA, o script dela a trava
                     if victim == localPlayer then
                         vHrp.Anchored = true
                     end
 
-                    -- Animação de descida e crescimento
+                    -- Animação de descida e tremor de câmera (Inspirado no Coquette Hub)
                     for i = 1, 60 do
                         if not ball or not ball.Parent then break end
                         ball.Size = ball.Size + Vector3.new(1.8, 1.8, 1.8)
                         ball.Position = ball.Position - Vector3.new(0, 2.5, 0)
                         
-                        -- Efeito de tremor na câmera (Inspirado em scripts de elite)
+                        -- Treme a câmera de quem está perto
                         local dist = (workspace.CurrentCamera.Focus.Position - vHrp.Position).Magnitude
-                        if dist < 100 then -- Só treme se estiver perto da explosão
+                        if dist < 150 then
                             workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * CFrame.Angles(math.rad(math.random(-1,1)), math.rad(math.random(-1,1)), 0)
                         end
                         task.wait(0.05)
                     end
 
-                    -- 3. IMPACTO E EXPLOSÃO
+                    -- 3. IMPACTO (Explosão e Flash para todos do Hub)
                     local exp = Instance.new("Explosion", workspace)
                     exp.Position = vHrp.Position
                     exp.BlastRadius = 60
                     exp.Visible = true
-                    exp.BlastPressure = 0 -- Pressão zero para não matar usuários do hub por erro de física
+                    exp.BlastPressure = 0 -- 0 para não matar os amigos do Hub
 
-                    -- Efeito de Flash Branco na tela de todos os usuários do Hub
-                    local flash = Instance.new("Frame", (gethui or function() return game.CoreGui end)())
+                    -- Flash Branco (Elite Visual)
+                    local flash = Instance.new("Frame", (gethui or function() return game:GetService("CoreGui") end)())
                     flash.Size = UDim2.new(1, 0, 1, 0)
                     flash.BackgroundColor3 = Color3.new(1, 1, 1)
-                    flash.BackgroundTransparency = 0
+                    flash.ZIndex = 9999999
                     game:GetService("TweenService"):Create(flash, TweenInfo.new(1.5), {BackgroundTransparency = 1}):Play()
                     task.delay(1.5, function() flash:Destroy() end)
 
                     if ball then ball:Destroy() end
 
-                    -- 4. CONSEQUÊNCIA REAL (Só para a vítima)
+                    -- 4. FINALIZAÇÃO REAL (Só roda no PC da vítima)
                     if victim == localPlayer then
                         vHrp.Anchored = false
-                        exp.BlastPressure = 5000000 -- Força máxima
+                        exp.BlastPressure = 5000000
                         if vHum then vHum.Health = 0 end
                     end
                 end)
-                
                 task.delay(12, function() if s then s:Destroy() end end)
             end
         
@@ -6243,6 +6242,7 @@ task.spawn(function()
         RE:WaitForChild("1RPNam1eColo1r", 9e9):FireServer("PickingRPBioColor", Color3.fromRGB(255, 19, 3))
     end)
 end)
+
 
 
 
